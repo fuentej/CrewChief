@@ -1,0 +1,12 @@
+Generate a concise summary of this user's garage.
+
+Garage data:
+{garage_data}
+
+Provide a brief overview that includes:
+1. Total number of vehicles and their general categorization (daily drivers, track cars, projects, etc.)
+2. Overall maintenance status - are vehicles being maintained regularly?
+3. Any notable patterns (e.g., multiple track cars, diverse collection, specific era/brand focus)
+4. Any vehicles that may need attention soon based on service history
+
+Keep the summary conversational, practical, and under 200 words. Focus on actionable insights rather than just listing facts.

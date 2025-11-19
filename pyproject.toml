@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crewchief"
+version = "1.0.0"
+description = "Local-first garage and maintenance assistant powered by Foundry Local"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "CrewChief Contributors"}
+]
+keywords = ["automotive", "maintenance", "garage", "llm", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "typer>=0.9",
+    "httpx>=0.24",
+    "sqlmodel>=0.0.14",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+crewchief = "crewchief.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["crewchief*"]
+exclude = ["tests*", "docker*", "iac*", "templates*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = []
