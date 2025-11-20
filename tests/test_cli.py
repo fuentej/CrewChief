@@ -224,6 +224,116 @@ class TestShowCar:
             assert "not found" in result.stdout.lower() or "Error" in result.stdout
 
 
+class TestUpdateCar:
+    """Test update-car command."""
+
+    def test_update_car_vin(self, temp_db):
+        """Test updating a car's VIN."""
+        db_path, repo = temp_db
+
+        # Add test car
+        car = Car(
+            year=2017,
+            make="Toyota",
+            model="86",
+            usage_type=UsageType.TRACK,
+        )
+        car = repo.add_car(car)
+
+        with patch("crewchief.cli.get_settings") as mock_settings:
+            settings_mock = create_settings_mock(db_path)
+            mock_settings.return_value = settings_mock
+
+            result = runner.invoke(
+                app,
+                ["update-car", str(car.id), "--vin", "JF1ZNAA19H9706029"],
+            )
+
+            assert result.exit_code == 0
+            assert "updated successfully" in result.stdout.lower()
+
+            # Verify VIN was updated
+            updated_car = repo.get_car(car.id)
+            assert updated_car.vin == "JF1ZNAA19H9706029"
+
+    def test_update_car_multiple_fields(self, temp_db):
+        """Test updating multiple fields at once."""
+        db_path, repo = temp_db
+
+        # Add test car
+        car = Car(
+            year=2017,
+            make="Toyota",
+            model="86",
+            usage_type=UsageType.TRACK,
+        )
+        car = repo.add_car(car)
+
+        with patch("crewchief.cli.get_settings") as mock_settings:
+            settings_mock = create_settings_mock(db_path)
+            mock_settings.return_value = settings_mock
+
+            result = runner.invoke(
+                app,
+                [
+                    "update-car",
+                    str(car.id),
+                    "--vin",
+                    "JF1ZNAA19H9706029",
+                    "--nickname",
+                    "Track Beast",
+                    "--odometer",
+                    "50000",
+                    "--notes",
+                    "Track ready",
+                ],
+            )
+
+            assert result.exit_code == 0
+
+            # Verify all fields were updated
+            updated_car = repo.get_car(car.id)
+            assert updated_car.vin == "JF1ZNAA19H9706029"
+            assert updated_car.nickname == "Track Beast"
+            assert updated_car.current_odometer == 50000
+            assert updated_car.notes == "Track ready"
+
+    def test_update_car_not_found(self, temp_db):
+        """Test updating a non-existent car."""
+        db_path, repo = temp_db
+
+        with patch("crewchief.cli.get_settings") as mock_settings:
+            settings_mock = create_settings_mock(db_path)
+            mock_settings.return_value = settings_mock
+
+            result = runner.invoke(app, ["update-car", "999", "--vin", "TEST123"])
+
+            assert result.exit_code != 0
+            assert "not found" in result.stdout.lower() or "Error" in result.stdout
+
+    def test_update_car_no_fields(self, temp_db):
+        """Test update-car with no fields specified."""
+        db_path, repo = temp_db
+
+        # Add test car
+        car = Car(
+            year=2017,
+            make="Toyota",
+            model="86",
+            usage_type=UsageType.TRACK,
+        )
+        car = repo.add_car(car)
+
+        with patch("crewchief.cli.get_settings") as mock_settings:
+            settings_mock = create_settings_mock(db_path)
+            mock_settings.return_value = settings_mock
+
+            result = runner.invoke(app, ["update-car", str(car.id)])
+
+            assert result.exit_code == 0
+            assert "no fields" in result.stdout.lower()
+
+
 class TestLogService:
     """Test log-service command."""
 
