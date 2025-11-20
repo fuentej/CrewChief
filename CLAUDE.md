@@ -32,11 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Setup
 
 ```bash
-# Create virtual environment (Linux/macOS)
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Create virtual environment (Windows)
+# Create virtual environment
 python -m venv .venv
 .venv\Scripts\activate
 
