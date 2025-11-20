@@ -21,6 +21,7 @@ class GarageRepository:
         if self.conn is None:
             self.conn = sqlite3.connect(str(self.db_path))
             self.conn.row_factory = sqlite3.Row  # Enable column access by name
+            self.conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
         return self.conn
 
     def close(self) -> None:
@@ -227,7 +228,7 @@ class GarageRepository:
         cursor = conn.cursor()
 
         query = "SELECT * FROM maintenance_events WHERE car_id = ? ORDER BY service_date DESC"
-        if limit:
+        if limit is not None:
             query += f" LIMIT {limit}"
 
         cursor.execute(query, (car_id,))
@@ -246,7 +247,7 @@ class GarageRepository:
         cursor = conn.cursor()
 
         query = "SELECT * FROM maintenance_events ORDER BY service_date DESC"
-        if limit:
+        if limit is not None:
             query += f" LIMIT {limit}"
 
         cursor.execute(query)

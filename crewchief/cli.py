@@ -124,7 +124,7 @@ def init_garage() -> None:
                             models_data = models_response.json()
                             if models_data.get("data") and len(models_data["data"]) > 0:
                                 model_name = models_data["data"][0]["id"]
-                    except Exception:
+                    except (requests.RequestException, ValueError):
                         pass  # Use default if detection fails
 
                     # Create .env file
@@ -146,7 +146,7 @@ CREWCHIEF_LLM_TIMEOUT=30
         except (FileNotFoundError, subprocess.TimeoutExpired):
             console.print("[yellow]⚠[/yellow] Foundry Local not installed")
             console.print("[dim]AI features require Foundry Local - see PREREQUISITES.md[/dim]")
-        except Exception as e:
+        except OSError as e:
             console.print(f"[yellow]⚠[/yellow] Could not auto-detect Foundry Local: {e}")
             console.print("[dim]You can create .env manually if needed - see PREREQUISITES.md[/dim]")
 
@@ -549,8 +549,8 @@ def summary() -> None:
     """Get an AI-generated summary of your garage."""
     repo = get_repository()
 
-    # Get all cars and maintenance events
     try:
+        # Get all cars and maintenance events
         cars = repo.get_cars()
         if not cars:
             console.print("[yellow]No cars in garage yet. Use 'crewchief add-car' to get started.[/yellow]")
@@ -579,6 +579,8 @@ def summary() -> None:
     except Exception as e:
         console.print(f"[red]Error generating summary:[/red] {e}")
         raise typer.Exit(code=1)
+    finally:
+        repo.close()
 
 
 @app.command()
@@ -628,6 +630,8 @@ def suggest_maint() -> None:
         console.print(f"[red]LLM error:[/red] {e}")
     except Exception as e:
         console.print(f"[red]Error generating suggestions:[/red] {e}")
+    finally:
+        repo.close()
 
 
 @app.command()
@@ -639,15 +643,14 @@ def track_prep(car_id: int) -> None:
     """
     repo = get_repository()
 
-    # Get the car
-    car = repo.get_car(car_id)
-    if not car:
-        console.print(f"[red]Car with ID {car_id} not found.[/red]")
-        console.print("Use 'crewchief list-cars' to see available cars.")
-        repo.close()
-        raise typer.Exit(code=1)
-
     try:
+        # Get the car
+        car = repo.get_car(car_id)
+        if not car:
+            console.print(f"[red]Car with ID {car_id} not found.[/red]")
+            console.print("Use 'crewchief list-cars' to see available cars.")
+            raise typer.Exit(code=1)
+
         # Get maintenance history
         maintenance_history = repo.get_maintenance_for_car(car_id)
 
@@ -677,16 +680,15 @@ def track_prep(car_id: int) -> None:
     except LLMUnavailableError as e:
         console.print(f"[red]LLM service unavailable:[/red] {e}")
         console.print("[yellow]Make sure Foundry Local is running: foundry serve phi-3.5-mini[/yellow]")
-        repo.close()
         raise typer.Exit(code=1)
     except LLMError as e:
         console.print(f"[red]LLM error:[/red] {e}")
-        repo.close()
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"[red]Error generating checklist:[/red] {e}")
-        repo.close()
         raise typer.Exit(code=1)
+    finally:
+        repo.close()
 
 
 if __name__ == "__main__":

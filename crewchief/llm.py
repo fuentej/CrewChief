@@ -115,6 +115,10 @@ def llm_chat(
         raise LLMResponseError(
             f"LLM service returned error: {e.response.status_code} - {e.response.text}"
         ) from e
+    except httpx.RequestError as e:
+        raise LLMUnavailableError(
+            f"LLM request failed: {e}"
+        ) from e
 
     # Parse the response
     try:

@@ -25,7 +25,8 @@ dependencies = [
     "pydantic-settings>=2.0",
     "typer>=0.9",
     "httpx>=0.24",
-    "sqlmodel>=0.0.14",
+    "rich>=13.0",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
