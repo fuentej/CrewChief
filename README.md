@@ -315,7 +315,9 @@ CrewChief is built with:
 
 ## License
 
-[License information to be added]
+This is demonstration-only software. You may download and run it as-is for evaluation,
+but you may not modify, redistribute, or use it commercially. See the LICENSE file
+for full terms.
 
 ## Contributing
 
