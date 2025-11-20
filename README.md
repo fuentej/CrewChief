@@ -54,6 +54,12 @@ crewchief list-cars
 # View detailed information for a specific car
 crewchief show-car 1
 
+# Update car information
+crewchief update-car 1 --vin JF1ZNAA19H9706029 --odometer 50000
+
+# Remove a car (with confirmation)
+crewchief remove-car 1
+
 # Log maintenance (interactive)
 crewchief log-service 1
 
@@ -271,11 +277,13 @@ CREWCHIEF_LLM_TIMEOUT=30
 - `add-car` - Add a new vehicle to your garage
 - `list-cars` - Show all vehicles
 - `show-car <id>` - Display details for a specific car
+- `update-car <id>` - Update car information (VIN, odometer, etc.)
+- `remove-car <id>` - Remove a car and its maintenance history
 - `log-service <id>` - Record a maintenance event
 - `history <id>` - View maintenance history for a car
-- `summary` - Get AI summary of your garage
-- `suggest-maint` - Get AI maintenance recommendations
-- `track-prep <id>` - Generate track day checklist
+- `summary` - Get AI summary of your garage (requires Foundry Local)
+- `suggest-maint` - Get AI maintenance recommendations (requires Foundry Local)
+- `track-prep <id>` - Generate track day checklist (requires Foundry Local)
 
 ## Development
 

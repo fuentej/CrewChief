@@ -86,6 +86,8 @@ crewchief init-garage              # Initialize DB and config
 crewchief add-car                  # Add a car to garage
 crewchief list-cars                # List all cars
 crewchief show-car <car_id>        # Show car details
+crewchief update-car <car_id>      # Update car information
+crewchief remove-car <car_id>      # Remove a car and its history
 crewchief log-service <car_id>     # Log maintenance event
 crewchief history <car_id>         # View maintenance history
 crewchief summary                  # LLM-generated garage summary
@@ -386,6 +388,12 @@ crewchief add-car
 
 # Add a car with all parameters
 crewchief add-car --year 2024 --make Porsche --model "911 GT3" --nickname "Track Monster" --usage track
+
+# Update car information
+crewchief update-car 1 --vin JF1ZNAA19H9706029 --odometer 50000
+
+# Remove a car
+crewchief remove-car 1 --force
 
 # Log maintenance
 crewchief log-service 1 --type oil_change --odometer 15000 --description "Motul 5W-40"
