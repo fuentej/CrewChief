@@ -108,11 +108,12 @@ def init_garage() -> None:
             if result.returncode == 0:
                 # Try to extract the endpoint URL from the output
                 import re
-                match = re.search(r'http://localhost:(\d+)', result.stdout)
+                match = re.search(r'http://(?:localhost|127\.0\.0\.1):(\d+)', result.stdout)
 
                 if match:
                     port = match.group(1)
-                    llm_url = f"http://localhost:{port}/v1"
+                    # Use localhost for consistency
+                    llm_url = f"http://localhost:{port}/openai/v1"
 
                     # Create .env file
                     env_content = f"""# CrewChief Configuration
