@@ -1,6 +1,6 @@
 """CLI interface for CrewChief using Typer."""
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import typer
