@@ -13,7 +13,7 @@ Create a practical, prioritized checklist for preparing this vehicle for a track
 4. Practical recommendations based on the service records
 
 Return your response as a JSON object with this structure:
-{{
+{
   "car_label": "2024 Porsche 911 GT3 (Track Monster)",
   "critical_items": [
     "Inspect brake pads (minimum 50% material remaining)",
@@ -24,7 +24,7 @@ Return your response as a JSON object with this structure:
     "Torque check wheel lug nuts"
   ],
   "notes": "Based on your maintenance history, brakes were last serviced [X] days ago. [Additional context-specific advice]"
-}}
+}
 
 Guidelines:
 - Prioritize safety above all else
