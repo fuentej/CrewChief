@@ -233,6 +233,19 @@ def llm_chat(
                     fixed_json = search_back[:i+1]
                     break
 
+            # Check if we ended with a key without a value (e.g., "recommended_items" with no colon/value)
+            # This happens when the value was completely truncated
+            # Look for pattern: , "key" at the end
+            if fixed_json.rstrip().endswith('"'):
+                # Find the last comma before this dangling key
+                last_comma_idx = fixed_json.rfind(',')
+                if last_comma_idx >= 0:
+                    # Check if there's only whitespace and a key after the comma
+                    after_comma = fixed_json[last_comma_idx+1:]
+                    if ':' not in after_comma:  # No colon means no value was provided
+                        # Remove the comma and everything after it
+                        fixed_json = fixed_json[:last_comma_idx]
+
         # Now close any open structures
         open_braces = fixed_json.count("{") - fixed_json.count("}")
         open_brackets = fixed_json.count("[") - fixed_json.count("]")
@@ -439,6 +452,19 @@ def generate_maintenance_suggestions(
                         # Found a complete value, keep everything up to and including it
                         fixed_json = search_back[:i+1]
                         break
+
+                # Check if we ended with a key without a value (e.g., "recommended_items" with no colon/value)
+                # This happens when the value was completely truncated
+                # Look for pattern: , "key" at the end
+                if fixed_json.rstrip().endswith('"'):
+                    # Find the last comma before this dangling key
+                    last_comma_idx = fixed_json.rfind(',')
+                    if last_comma_idx >= 0:
+                        # Check if there's only whitespace and a key after the comma
+                        after_comma = fixed_json[last_comma_idx+1:]
+                        if ':' not in after_comma:  # No colon means no value was provided
+                            # Remove the comma and everything after it
+                            fixed_json = fixed_json[:last_comma_idx]
 
             # Now close any open structures
             open_braces = fixed_json.count("{") - fixed_json.count("}")
