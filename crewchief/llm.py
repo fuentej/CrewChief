@@ -136,31 +136,33 @@ def llm_chat(
         # Strip whitespace and remove markdown code blocks if present
         json_str = content.strip()
 
-        # Handle markdown code blocks (```json ... ```)
+        # Handle markdown code blocks by finding actual JSON boundaries
         if "```" in json_str:
-            # Extract content between backticks
-            parts = json_str.split("```")
-            # Format is typically: [prefix, language\njson_content, suffix]
-            # We want the middle part
-            if len(parts) >= 3:
-                json_str = parts[1]  # Get middle part between first and second ```
-            elif len(parts) == 2:
-                # Only one set of backticks, take the second part
-                json_str = parts[1]
-            else:
-                json_str = parts[0]
+            # Find the start of actual JSON (either { or [)
+            brace_idx = json_str.find("{")
+            bracket_idx = json_str.find("[")
 
-            # Remove language identifier (json, python, etc.) and extra whitespace
-            json_str = json_str.strip()
-            lines = json_str.split("\n")
+            # Use whichever comes first
+            start_idx = -1
+            if brace_idx >= 0 and bracket_idx >= 0:
+                start_idx = min(brace_idx, bracket_idx)
+            elif brace_idx >= 0:
+                start_idx = brace_idx
+            elif bracket_idx >= 0:
+                start_idx = bracket_idx
 
-            # Skip language identifier line if present
-            if lines and lines[0].strip() in ("json", "python", "javascript"):
-                json_str = "\n".join(lines[1:])
+            if start_idx >= 0:
+                # Find the end of JSON (last } or ])
+                json_str_candidate = json_str[start_idx:]
+                # Try to find matching closing brace/bracket
+                for i in range(len(json_str_candidate) - 1, -1, -1):
+                    if json_str_candidate[i] in ("}", "]"):
+                        json_str = json_str_candidate[:i+1]
+                        break
 
         json_str = json_str.strip()
         if not json_str:
-            raise LLMResponseError(f"No JSON content found after extracting from response. Raw: {repr(content[:300])}")
+            raise LLMResponseError(f"No JSON content found in response")
         return response_schema.model_validate_json(json_str)
     except (ValidationError, json.JSONDecodeError) as e:
         raise LLMResponseError(
@@ -283,27 +285,29 @@ def generate_maintenance_suggestions(
         # Strip whitespace and remove markdown code blocks if present
         json_str = response.strip()
 
-        # Handle markdown code blocks (```json ... ```)
+        # Handle markdown code blocks by finding actual JSON boundaries
         if "```" in json_str:
-            # Extract content between backticks
-            parts = json_str.split("```")
-            # Format is typically: [prefix, language\njson_content, suffix]
-            # We want the middle part
-            if len(parts) >= 3:
-                json_str = parts[1]  # Get middle part between first and second ```
-            elif len(parts) == 2:
-                # Only one set of backticks, take the second part
-                json_str = parts[1]
-            else:
-                json_str = parts[0]
+            # Find the start of actual JSON (either { or [)
+            brace_idx = json_str.find("{")
+            bracket_idx = json_str.find("[")
 
-            # Remove language identifier (json, python, etc.) and extra whitespace
-            json_str = json_str.strip()
-            lines = json_str.split("\n")
+            # Use whichever comes first
+            start_idx = -1
+            if brace_idx >= 0 and bracket_idx >= 0:
+                start_idx = min(brace_idx, bracket_idx)
+            elif brace_idx >= 0:
+                start_idx = brace_idx
+            elif bracket_idx >= 0:
+                start_idx = bracket_idx
 
-            # Skip language identifier line if present
-            if lines and lines[0].strip() in ("json", "python", "javascript"):
-                json_str = "\n".join(lines[1:])
+            if start_idx >= 0:
+                # Find the end of JSON (last } or ])
+                json_str_candidate = json_str[start_idx:]
+                # Try to find matching closing brace/bracket
+                for i in range(len(json_str_candidate) - 1, -1, -1):
+                    if json_str_candidate[i] in ("}", "]"):
+                        json_str = json_str_candidate[:i+1]
+                        break
 
         json_str = json_str.strip()
         suggestions_data = json.loads(json_str)
