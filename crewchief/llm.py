@@ -165,8 +165,9 @@ def llm_chat(
             raise LLMResponseError(f"No JSON content found in response")
         return response_schema.model_validate_json(json_str)
     except (ValidationError, json.JSONDecodeError) as e:
+        # Show more of the response and extracted JSON for debugging
         raise LLMResponseError(
-            f"LLM response does not match expected schema: {e}\n\nRaw response (first 500 chars): {repr(content[:500])}"
+            f"LLM response does not match expected schema: {e}\n\nExtracted JSON length: {len(json_str)}\nExtracted JSON (last 300 chars): {repr(json_str[-300:]) if json_str else 'EMPTY'}\n\nFull raw response length: {len(content)}\nRaw response (chars 0-500): {repr(content[:500])}\nRaw response (chars -500 to end): {repr(content[-500:])}"
         ) from e
 
 
