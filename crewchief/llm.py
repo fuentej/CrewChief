@@ -142,12 +142,19 @@ def llm_chat(
             parts = json_str.split("```")
             if len(parts) >= 3:
                 json_str = parts[1]  # Get middle part between first and second ```
-                # Remove language identifier (json, python, etc.)
-                if json_str.strip().startswith(("json", "python", "javascript")):
-                    lines = json_str.split("\n", 1)
-                    json_str = lines[1] if len(lines) > 1 else ""
+            else:
+                # If there are only 2 parts, take what's after the first ```
+                json_str = parts[0] if len(parts) > 1 else json_str
+
+            # Remove language identifier (json, python, etc.) and extra whitespace
+            json_str = json_str.strip()
+            if json_str.startswith(("json", "python", "javascript")):
+                lines = json_str.split("\n", 1)
+                json_str = lines[1] if len(lines) > 1 else ""
 
         json_str = json_str.strip()
+        if not json_str:
+            raise LLMResponseError(f"No JSON content found after extracting from response")
         return response_schema.model_validate_json(json_str)
     except (ValidationError, json.JSONDecodeError) as e:
         raise LLMResponseError(
@@ -276,10 +283,15 @@ def generate_maintenance_suggestions(
             parts = json_str.split("```")
             if len(parts) >= 3:
                 json_str = parts[1]  # Get middle part between first and second ```
-                # Remove language identifier (json, python, etc.)
-                if json_str.strip().startswith(("json", "python", "javascript")):
-                    lines = json_str.split("\n", 1)
-                    json_str = lines[1] if len(lines) > 1 else ""
+            else:
+                # If there are only 2 parts, take what's after the first ```
+                json_str = parts[0] if len(parts) > 1 else json_str
+
+            # Remove language identifier (json, python, etc.) and extra whitespace
+            json_str = json_str.strip()
+            if json_str.startswith(("json", "python", "javascript")):
+                lines = json_str.split("\n", 1)
+                json_str = lines[1] if len(lines) > 1 else ""
 
         json_str = json_str.strip()
         suggestions_data = json.loads(json_str)
