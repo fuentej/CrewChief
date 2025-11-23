@@ -560,23 +560,15 @@ def generate_maintenance_suggestions(
             open_braces = fixed_json.count("{") - fixed_json.count("}")
             open_brackets = fixed_json.count("[") - fixed_json.count("]")
 
-            print(f"DEBUG: After cleanup - open_braces={open_braces}, open_brackets={open_brackets}")
-            print(f"DEBUG: fixed_json length: {len(fixed_json)}")
-            print(f"DEBUG: fixed_json ends with: {repr(fixed_json[-50:])}")
-
             if open_braces > 0 or open_brackets > 0:
                 # Close any open brackets first
                 fixed_json += "]" * open_brackets
                 # Close any open braces
                 fixed_json += "}" * open_braces
 
-                print(f"DEBUG: After closing - fixed_json ends with: {repr(fixed_json[-50:])}")
-
                 try:
                     suggestions_data = json.loads(fixed_json)
-                    print(f"DEBUG: Successfully parsed after closing!")
                 except json.JSONDecodeError as e:
-                    print(f"DEBUG: Still failed after closing: {e}")
                     raise initial_error
             else:
                 raise initial_error
