@@ -1122,7 +1122,7 @@ def set_interval(car_id: int) -> None:
         try:
             last_service_date = date.fromisoformat(last_service_date_input)
         except ValueError:
-            console.print("[red]Error:[/red] Invalid date format. Use YYYY-MM-DD")
+            console.print(f"[red]Error:[/red] Invalid date format. Use YYYY-MM-DD (e.g., 2025-05-16), not '{last_service_date_input}'")
             repo.close()
             raise typer.Exit(code=1)
 
@@ -1206,7 +1206,9 @@ def check_due(
 
 # Phase 4: LLM-powered features
 @app.command()
-def summary(car_id: int | None = None) -> None:
+def summary(
+    car_id: Annotated[int | None, typer.Argument(help="Car ID (optional, shows garage summary if omitted)")] = None,
+) -> None:
     """Get an AI-generated summary of your garage or a specific car."""
     repo = get_repository()
 
@@ -1267,7 +1269,9 @@ def summary(car_id: int | None = None) -> None:
 
 
 @app.command()
-def suggest_maint(car_id: int | None = None) -> None:
+def suggest_maint(
+    car_id: Annotated[int | None, typer.Argument(help="Car ID (optional, shows suggestions for all cars if omitted)")] = None,
+) -> None:
     """Get AI-powered maintenance suggestions for a car or all vehicles."""
     repo = get_repository()
 

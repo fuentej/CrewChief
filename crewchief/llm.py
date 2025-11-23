@@ -630,9 +630,11 @@ def generate_maintenance_suggestions(
         ]
         return suggestions
     except (json.JSONDecodeError, ValidationError) as e:
-        raise LLMResponseError(
-            f"Failed to parse maintenance suggestions: {e}"
-        ) from e
+        # Provide more detailed error with raw response for debugging
+        error_msg = f"Failed to parse maintenance suggestions: {e}\n\nRaw LLM response (first 500 chars):\n{repr(response[:500])}"
+        if len(response) > 500:
+            error_msg += f"\n\nRaw LLM response (last 500 chars):\n{repr(response[-500:])}"
+        raise LLMResponseError(error_msg) from e
 
 
 def generate_track_prep_checklist(
