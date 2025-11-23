@@ -312,11 +312,12 @@ def llm_chat(
         ) from initial_error
 
 
-def generate_garage_summary(snapshot: GarageSnapshot) -> str:
+def generate_garage_summary(snapshot: GarageSnapshot, parts: list | None = None) -> str:
     """Generate a natural language summary of the garage.
 
     Args:
         snapshot: Complete garage data (cars and maintenance events).
+        parts: Optional list of CarPart objects to include in context.
 
     Returns:
         A conversational summary of the garage status.
@@ -353,6 +354,19 @@ def generate_garage_summary(snapshot: GarageSnapshot) -> str:
         ],
     }
 
+    # Add parts profile if available
+    if parts:
+        garage_data["parts_profile"] = [
+            {
+                "car_id": part.car_id,
+                "category": part.part_category.value,
+                "brand": part.brand,
+                "part_number": part.part_number,
+                "size_spec": part.size_spec,
+            }
+            for part in parts
+        ]
+
     # Format the user prompt with data
     user_prompt = user_template.format(
         garage_data=json.dumps(garage_data, indent=2)
@@ -369,11 +383,13 @@ def generate_garage_summary(snapshot: GarageSnapshot) -> str:
 
 def generate_maintenance_suggestions(
     snapshot: GarageSnapshot,
+    parts: list | None = None,
 ) -> list[MaintenanceSuggestion]:
     """Generate AI-powered maintenance suggestions for all vehicles.
 
     Args:
         snapshot: Complete garage data (cars and maintenance events).
+        parts: Optional list of CarPart objects to include in context.
 
     Returns:
         List of maintenance suggestions, one per vehicle.
@@ -409,6 +425,19 @@ def generate_maintenance_suggestions(
             for event in snapshot.maintenance_events
         ],
     }
+
+    # Add parts profile if available
+    if parts:
+        garage_data["parts_profile"] = [
+            {
+                "car_id": part.car_id,
+                "category": part.part_category.value,
+                "brand": part.brand,
+                "part_number": part.part_number,
+                "size_spec": part.size_spec,
+            }
+            for part in parts
+        ]
 
     # Format the user prompt
     user_prompt = user_template.format(

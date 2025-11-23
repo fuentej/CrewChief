@@ -890,28 +890,50 @@ def delete_part(part_id: int) -> None:
 
 # Phase 4: LLM-powered features
 @app.command()
-def summary() -> None:
-    """Get an AI-generated summary of your garage."""
+def summary(car_id: int | None = None) -> None:
+    """Get an AI-generated summary of your garage or a specific car."""
     repo = get_repository()
 
     try:
-        # Get all cars and maintenance events
-        cars = repo.get_cars()
-        if not cars:
-            console.print("[yellow]No cars in garage yet. Use 'crewchief add-car' to get started.[/yellow]")
-            return
+        if car_id is not None:
+            # Single car summary
+            car = repo.get_car(car_id)
+            if car is None:
+                console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+                repo.close()
+                raise typer.Exit(code=1)
 
-        all_maintenance = repo.get_all_maintenance()
+            cars = [car]
+            all_maintenance = repo.get_maintenance_for_car(car_id)
+            car_parts = repo.get_car_parts(car_id)
+
+            console.print(f"[dim]Generating summary for {car.display_name()}...[/dim]")
+        else:
+            # Garage-wide summary
+            cars = repo.get_cars()
+            if not cars:
+                console.print("[yellow]No cars in garage yet. Use 'crewchief add-car' to get started.[/yellow]")
+                return
+
+            all_maintenance = repo.get_all_maintenance()
+            # Get all parts for all cars
+            car_parts = []
+            for car in cars:
+                car_parts.extend(repo.get_car_parts(car.id))
+
+            console.print("[dim]Generating garage summary...[/dim]")
 
         # Build snapshot for LLM
         snapshot = GarageSnapshot(cars=cars, maintenance_events=all_maintenance)
 
-        # Generate summary
-        console.print("[dim]Generating garage summary...[/dim]")
-        summary_text = generate_garage_summary(snapshot)
+        # Generate summary (pass parts as additional context)
+        summary_text = generate_garage_summary(snapshot, parts=car_parts if car_parts else None)
 
         # Display result
-        console.print("\n[bold cyan]🏁 Garage Summary[/bold cyan]")
+        if car_id is not None:
+            console.print(f"\n[bold cyan]🏁 Summary: {cars[0].display_name()}[/bold cyan]")
+        else:
+            console.print("\n[bold cyan]🏁 Garage Summary[/bold cyan]")
         console.print(f"\n{summary_text}\n")
 
     except LLMUnavailableError as e:
@@ -929,24 +951,44 @@ def summary() -> None:
 
 
 @app.command()
-def suggest_maint() -> None:
-    """Get AI-powered maintenance suggestions for all vehicles."""
+def suggest_maint(car_id: int | None = None) -> None:
+    """Get AI-powered maintenance suggestions for a car or all vehicles."""
     repo = get_repository()
 
     try:
-        cars = repo.get_cars()
-        if not cars:
-            console.print("[yellow]No cars in garage yet. Use 'crewchief add-car' to get started.[/yellow]")
-            return
+        if car_id is not None:
+            # Single car suggestions
+            car = repo.get_car(car_id)
+            if car is None:
+                console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+                repo.close()
+                raise typer.Exit(code=1)
 
-        all_maintenance = repo.get_all_maintenance()
+            cars = [car]
+            all_maintenance = repo.get_maintenance_for_car(car_id)
+            car_parts = repo.get_car_parts(car_id)
+
+            console.print(f"[dim]Analyzing maintenance needs for {car.display_name()}...[/dim]")
+        else:
+            # Garage-wide suggestions
+            cars = repo.get_cars()
+            if not cars:
+                console.print("[yellow]No cars in garage yet. Use 'crewchief add-car' to get started.[/yellow]")
+                return
+
+            all_maintenance = repo.get_all_maintenance()
+            # Get all parts for all cars
+            car_parts = []
+            for car in cars:
+                car_parts.extend(repo.get_car_parts(car.id))
+
+            console.print("[dim]Analyzing maintenance needs...[/dim]")
 
         # Build snapshot for LLM
         snapshot = GarageSnapshot(cars=cars, maintenance_events=all_maintenance)
 
-        # Generate suggestions
-        console.print("[dim]Analyzing maintenance needs...[/dim]")
-        suggestions = generate_maintenance_suggestions(snapshot)
+        # Generate suggestions (pass parts as additional context)
+        suggestions = generate_maintenance_suggestions(snapshot, parts=car_parts if car_parts else None)
 
         # Display results
         console.print("\n[bold cyan]🔧 Maintenance Suggestions[/bold cyan]\n")
