@@ -243,8 +243,16 @@ def llm_chat(
                 # Check if there's only whitespace and a key after the comma
                 after_comma = fixed_json[last_comma_idx+1:]
                 if ':' not in after_comma:  # No colon means no value was provided
-                    # Remove the comma and everything after it
-                    fixed_json = fixed_json[:last_comma_idx]
+                    # Extract the dangling key name
+                    # It's between quotes, so find the quotes
+                    key_match = after_comma.strip()
+                    if key_match.startswith('"') and key_match.endswith('"'):
+                        dangling_key = key_match[1:-1]
+                        # Add the key with an empty array as default (for list fields)
+                        fixed_json = fixed_json[:last_comma_idx] + f', "{dangling_key}": []'
+                    else:
+                        # If we can't parse the key, just remove the comma and dangling content
+                        fixed_json = fixed_json[:last_comma_idx]
 
         # Now close any open structures
         # IMPORTANT: Recount after removing dangling keys
