@@ -490,10 +490,31 @@ def generate_maintenance_suggestions(
             # Also check for keys with missing values (e.g., "car_label": with no value after)
             # This happens when truncation occurs right after the colon
             if fixed_json.rstrip().endswith(':'):
-                # Key with missing value - remove the key and colon
+                # Key with missing value - remove the key and colon and everything back to last complete value
                 last_comma_idx = fixed_json.rfind(',')
                 if last_comma_idx >= 0:
+                    # Go back to the last comma and remove everything after it
                     fixed_json = fixed_json[:last_comma_idx]
+
+                    # Now check if we're inside an incomplete object/array and need to find a better truncation point
+                    # Walk backwards from the comma to find the last complete key-value pair
+                    search_back = fixed_json[:last_comma_idx]
+                    in_string = False
+                    escape_next = False
+                    for i in range(len(search_back) - 1, -1, -1):
+                        if escape_next:
+                            escape_next = False
+                            continue
+                        char = search_back[i]
+                        if char == '\\':
+                            escape_next = True
+                            continue
+                        if char == '"':
+                            in_string = not in_string
+                        # If we find a closing bracket/brace outside a string, we've found a complete value
+                        if not in_string and char in (']', '}'):
+                            fixed_json = search_back[:i+1]
+                            break
                 else:
                     # No comma found, try to remove from the opening brace
                     last_brace_idx = fixed_json.rfind('{')
