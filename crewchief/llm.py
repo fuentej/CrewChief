@@ -60,6 +60,7 @@ def llm_chat(
     system_prompt: str,
     user_prompt: str,
     response_schema: type[BaseModel] | None = None,
+    temperature: float = 0.3,
 ) -> str | BaseModel:
     """Make a chat completion request to Foundry Local.
 
@@ -67,6 +68,8 @@ def llm_chat(
         system_prompt: The system prompt defining the assistant's behavior.
         user_prompt: The user's prompt/question.
         response_schema: Optional Pydantic model to validate and parse JSON responses.
+        temperature: Sampling temperature (0.0-1.0). Lower = more deterministic.
+                    Default 0.3 for structured outputs. Use 0.7 for creative text.
 
     Returns:
         Either a string (raw response) or a Pydantic model instance (if schema provided).
@@ -87,7 +90,7 @@ def llm_chat(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0.7,
+        "temperature": temperature,
     }
 
     # If we expect a JSON response, request JSON mode
@@ -372,8 +375,8 @@ def generate_garage_summary(snapshot: GarageSnapshot, parts: list | None = None)
         garage_data=json.dumps(garage_data, indent=2)
     )
 
-    # Call LLM
-    response = llm_chat(system_prompt, user_prompt)
+    # Call LLM with higher temperature for more natural, conversational text
+    response = llm_chat(system_prompt, user_prompt, temperature=0.7)
 
     if not isinstance(response, str):
         raise LLMResponseError("Expected string response for garage summary")
@@ -387,6 +390,9 @@ def generate_maintenance_suggestions(
 ) -> list[MaintenanceSuggestion]:
     """Generate AI-powered maintenance suggestions for all vehicles.
 
+    Uses multiple smaller LLM requests (one per car) to avoid truncation issues
+    with Foundry Local's 621-character response limit.
+
     Args:
         snapshot: Complete garage data (cars and maintenance events).
         parts: Optional list of CarPart objects to include in context.
@@ -399,242 +405,116 @@ def generate_maintenance_suggestions(
     """
     # Load prompt templates
     system_prompt = _load_prompt_template("system_crewchief.txt")
-    user_template = _load_prompt_template("maintenance_suggestions.txt")
 
-    # Build garage data context (same as garage_summary)
-    garage_data = {
-        "total_cars": len(snapshot.cars),
-        "cars": [
+    suggestions = []
+
+    # Request suggestions for each car individually to avoid truncation
+    for car in snapshot.cars:
+        # Filter maintenance events for this car only
+        car_events = [e for e in snapshot.maintenance_events if e.car_id == car.id]
+
+        # Filter parts for this car only
+        car_parts = [p for p in parts if p.car_id == car.id] if parts else []
+
+        # Build context for this specific car
+        car_data = {
+            "id": car.id,
+            "display_name": car.display_name(),
+            "usage_type": car.usage_type.value,
+            "current_odometer": car.current_odometer,
+            "notes": car.notes,
+        }
+
+        maintenance_data = [
             {
-                "id": car.id,
-                "display_name": car.display_name(),
-                "usage_type": car.usage_type.value,
-                "current_odometer": car.current_odometer,
-                "notes": car.notes,
-            }
-            for car in snapshot.cars
-        ],
-        "maintenance_events": [
-            {
-                "car_id": event.car_id,
                 "service_date": event.service_date.isoformat(),
                 "service_type": event.service_type.value,
                 "description": event.description,
                 "odometer": event.odometer,
             }
-            for event in snapshot.maintenance_events
-        ],
-    }
+            for event in car_events
+        ]
 
-    # Add parts profile if available
-    if parts:
-        garage_data["parts_profile"] = [
+        parts_data = [
             {
-                "car_id": part.car_id,
                 "category": part.part_category.value,
                 "brand": part.brand,
                 "part_number": part.part_number,
                 "size_spec": part.size_spec,
             }
-            for part in parts
+            for part in car_parts
         ]
 
-    # Format the user prompt
-    user_prompt = user_template.format(
-        garage_data=json.dumps(garage_data, indent=2)
-    )
+        # Create a focused prompt for this single car
+        user_prompt = f"""Analyze maintenance needs for this vehicle and provide suggestions.
 
-    # The prompt expects a JSON array, but we need a wrapper for Pydantic validation
-    # We'll parse the response as raw JSON first, then validate each item
-    response = llm_chat(system_prompt, user_prompt)
+Vehicle: {json.dumps(car_data, indent=2)}
+Maintenance history: {json.dumps(maintenance_data, indent=2)}
+Parts profile: {json.dumps(parts_data, indent=2)}
 
-    if not isinstance(response, str):
-        raise LLMResponseError("Expected string response for maintenance suggestions")
+Provide maintenance suggestions based on:
+1. Service history gaps (e.g., no oil change recorded recently)
+2. Usage type (track cars need more frequent inspections)
+3. Typical maintenance intervals
+4. Parts profile (reference specific oil type, tire brand, etc.)
 
-    # Parse JSON array and validate each suggestion
-    try:
-        # Strip whitespace and remove markdown code blocks if present
-        json_str = response.strip()
+Respond with ONLY a JSON object (no markdown, no explanation) with this structure:
+{{
+  "suggested_actions": ["action1", "action2"],
+  "priority": "high|medium|low",
+  "reasoning": "brief explanation"
+}}
 
-        if not json_str:
-            raise LLMResponseError(f"Empty response from LLM. Raw response: {repr(response)}")
+Guidelines:
+- Prioritize safety-critical items (brakes, tires, suspension)
+- Consider vehicle usage patterns heavily
+- Reference specific parts when making recommendations
+- Be specific but concise
+- Recommend professional service for complex or safety-critical work"""
 
-        # Handle markdown code blocks by finding actual JSON boundaries
-        if "```" in json_str:
-            # Find the start of actual JSON (either { or [)
-            brace_idx = json_str.find("{")
-            bracket_idx = json_str.find("[")
-
-            # Use whichever comes first
-            start_idx = -1
-            if brace_idx >= 0 and bracket_idx >= 0:
-                start_idx = min(brace_idx, bracket_idx)
-            elif brace_idx >= 0:
-                start_idx = brace_idx
-            elif bracket_idx >= 0:
-                start_idx = bracket_idx
-
-            if start_idx >= 0:
-                # Find the end of JSON by counting braces/brackets properly
-                json_str_candidate = json_str[start_idx:]
-                open_count = 0
-                first_char = json_str_candidate[0]
-
-                # Track depth of nesting while respecting strings
-                in_string = False
-                escape_next = False
-                json_end_idx = -1
-                for i, char in enumerate(json_str_candidate):
-                    if escape_next:
-                        escape_next = False
-                        continue
-                    if char == "\\":
-                        escape_next = True
-                        continue
-                    if char == '"':
-                        in_string = not in_string
-                    if not in_string:
-                        if char in ("{", "["):
-                            open_count += 1
-                        elif char in ("}", "]"):
-                            open_count -= 1
-                            if open_count == 0:
-                                json_end_idx = i
-                                break
-
-                # Extract JSON if we found the end, otherwise take what we can
-                if json_end_idx >= 0:
-                    json_str = json_str_candidate[:json_end_idx+1]
-                else:
-                    # Fallback: just use from start_idx onwards
-                    json_str = json_str_candidate
-
-        json_str = json_str.strip()
-
-        # Try to parse as-is first
         try:
-            suggestions_data = json.loads(json_str)
-        except json.JSONDecodeError as initial_error:
-            # If JSON is incomplete, try to fix it by closing open structures
-            fixed_json = json_str
+            # Request JSON object for this car
+            response = llm_chat(system_prompt, user_prompt)
 
-            # Check if there's an unterminated string
-            quote_count = json_str.count('"')
-            if quote_count % 2 == 1:
-                # Odd number of quotes means unterminated string
-                last_quote_idx = json_str.rfind('"')
-                search_back = json_str[:last_quote_idx]
-                # Find the last meaningful character before the unterminated string
-                for i in range(len(search_back) - 1, -1, -1):
-                    char = search_back[i]
-                    if char == ',':
-                        # Found a comma - skip it and take everything before
-                        fixed_json = search_back[:i]
-                        break
-                    elif char in ('"', ']', '}'):
-                        # Found a complete value, keep everything up to and including it
-                        fixed_json = search_back[:i+1]
-                        break
+            if not isinstance(response, str):
+                # Skip this car if we can't get a valid response
+                continue
 
-            # Also check for keys with missing values (e.g., "car_label": with no value after)
-            # This happens when truncation occurs right after the colon
-            if fixed_json.rstrip().endswith(':'):
-                # Key with missing value - remove the key and colon and everything back to last complete value
-                last_comma_idx = fixed_json.rfind(',')
-                if last_comma_idx >= 0:
-                    # Go back to the last comma and remove everything after it
-                    fixed_json = fixed_json[:last_comma_idx]
+            # Parse the response
+            import re
+            json_str = response.strip()
 
-                    # Now check if we're inside an incomplete object/array and need to find a better truncation point
-                    # Walk backwards from the comma to find the last complete key-value pair
-                    search_back = fixed_json[:last_comma_idx]
-                    in_string = False
-                    escape_next = False
-                    for i in range(len(search_back) - 1, -1, -1):
-                        if escape_next:
-                            escape_next = False
-                            continue
-                        char = search_back[i]
-                        if char == '\\':
-                            escape_next = True
-                            continue
-                        if char == '"':
-                            in_string = not in_string
-                        # If we find a closing bracket/brace outside a string, we've found a complete value
-                        if not in_string and char in (']', '}'):
-                            fixed_json = search_back[:i+1]
-                            break
-                else:
-                    # No comma found, try to remove from the opening brace
-                    last_brace_idx = fixed_json.rfind('{')
-                    if last_brace_idx >= 0:
-                        fixed_json = fixed_json[:last_brace_idx+1]
+            # Remove markdown if present
+            if '```' in json_str:
+                json_str = json_str.replace('```json', '').replace('```', '').strip()
 
-            # Check if we ended with incomplete/malformed syntax
-            # This can happen when truncation occurs mid-structure
-            # Look for patterns like: , "key" (no value) or , "key": [] (malformed)
-            if fixed_json.rstrip().endswith(('"', ']', '}')):
-                # Find the last comma
-                last_comma_idx = fixed_json.rfind(',')
-                if last_comma_idx >= 0:
-                    # Check what comes after the comma
-                    after_comma = fixed_json[last_comma_idx+1:].strip()
+            # Find JSON object
+            json_match = re.search(r'\{[\s\S]*\}', json_str)
+            if json_match:
+                json_str = json_match.group().strip()
 
-                    # Check if it looks like an incomplete key-value pair
-                    if after_comma.startswith('"'):
-                        # This is a string (likely a key)
-                        # Check if there's a matching closing quote
-                        closing_quote_idx = after_comma.rfind('"')
-                        if closing_quote_idx > 0:
-                            # Extract potential key
-                            potential_key = after_comma[1:closing_quote_idx]
-                            after_key = after_comma[closing_quote_idx+1:].strip()
+            # Parse JSON
+            suggestion_data = json.loads(json_str)
 
-                            # If no colon after key, or colon with incomplete value, remove this dangling content
-                            if not after_key or not after_key.startswith(':'):
-                                # Remove the comma and everything after it
-                                fixed_json = fixed_json[:last_comma_idx]
-                            elif after_key.startswith(':'):
-                                # There's a colon but potentially malformed value
-                                # Check if what follows the colon looks incomplete
-                                after_colon = after_key[1:].strip()
-                                if after_colon in ('[]', '[', ']', '{}', '{', '}', ''):
-                                    # Likely incomplete, remove and add proper placeholder
-                                    fixed_json = fixed_json[:last_comma_idx] + f', "{potential_key}": []'
-                                elif after_colon.endswith((']', '}')) and not (after_colon.startswith('[') or after_colon.startswith('{')):
-                                    # Ends with bracket/brace but doesn't start with one - malformed
-                                    fixed_json = fixed_json[:last_comma_idx] + f', "{potential_key}": []'
+            # Add car identification
+            suggestion_data['car_id'] = car.id
+            suggestion_data['car_label'] = car.display_name()
 
-            # Now close any open structures
-            open_braces = fixed_json.count("{") - fixed_json.count("}")
-            open_brackets = fixed_json.count("[") - fixed_json.count("]")
+            # Validate and add to list
+            suggestion = MaintenanceSuggestion.model_validate(suggestion_data)
+            suggestions.append(suggestion)
 
-            if open_braces > 0 or open_brackets > 0:
-                # Close any open brackets first
-                fixed_json += "]" * open_brackets
-                # Close any open braces
-                fixed_json += "}" * open_braces
+        except (json.JSONDecodeError, ValidationError, KeyError) as e:
+            # If we can't parse this car's suggestions, create a minimal one
+            suggestions.append(MaintenanceSuggestion(
+                car_id=car.id,
+                car_label=car.display_name(),
+                suggested_actions=["Unable to generate suggestions - review maintenance history manually"],
+                priority="medium",
+                reasoning=f"LLM response parsing failed: {str(e)[:100]}"
+            ))
 
-                try:
-                    suggestions_data = json.loads(fixed_json)
-                except json.JSONDecodeError as e:
-                    raise initial_error
-            else:
-                raise initial_error
-
-        if not isinstance(suggestions_data, list):
-            raise LLMResponseError("Expected JSON array of suggestions")
-
-        suggestions = [
-            MaintenanceSuggestion.model_validate(item) for item in suggestions_data
-        ]
-        return suggestions
-    except (json.JSONDecodeError, ValidationError) as e:
-        # Provide more detailed error with raw response for debugging
-        error_msg = f"Failed to parse maintenance suggestions: {e}\n\nRaw LLM response (first 500 chars):\n{repr(response[:500])}"
-        if len(response) > 500:
-            error_msg += f"\n\nRaw LLM response (last 500 chars):\n{repr(response[-500:])}"
-        raise LLMResponseError(error_msg) from e
+    return suggestions
 
 
 def generate_track_prep_checklist(
