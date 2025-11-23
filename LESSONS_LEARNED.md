@@ -38,6 +38,21 @@ Example: `]}` vs `}]` depending on nesting order.
 **Root Cause:** Different JSON structures require different closure patterns.
 **Learning:** When fixing incomplete data, try multiple repair strategies and validate each attempt rather than assuming one approach will work.
 
+### 6. Keys with Missing Values
+**Issue:** Truncation could leave keys without values (e.g., `"recommended_items":` with nothing after the colon).
+**Root Cause:** Truncation happened mid-field, leaving the key but removing the entire value.
+**Learning:** Need to detect not just unterminated strings but also incomplete key-value pairs where the key exists but value doesn't.
+
+### 7. Entire Missing Fields
+**Issue:** Some truncations removed entire fields from the JSON (e.g., no `"recommended_items"` key at all).
+**Root Cause:** Truncation happened at a boundary where a field simply wasn't included in the partial response.
+**Learning:** When Pydantic validation reports missing fields, they can often be filled with sensible defaults (empty arrays for list fields).
+
+### 8. Fallback Request Formatting
+**Issue:** Fallback requests to fill missing fields were returning markdown-wrapped JSON that regex couldn't parse.
+**Root Cause:** The LLM consistently wraps responses in ` ```json ... ``` ` even when asked for raw JSON.
+**Learning:** Always handle markdown wrapping in both primary and fallback requests. Can't assume "raw" requests will truly be raw.
+
 ## Solutions Implemented
 
 ### 1. Robust JSON Boundary Detection
@@ -49,22 +64,32 @@ Example: `]}` vs `}]` depending on nesting order.
 - Remove markdown in initial extraction (happy path)
 - **Also** remove markdown in error handling (when initial parsing fails)
 - This ensures both paths work with clean JSON
+- Handle markdown in both direct JSON responses and fallback requests
 
-### 3. Intelligent Truncation
+### 3. Intelligent Truncation Recovery
 - Detect unterminated strings (odd quote count)
-- Backtrack to the last complete value
+- Detect keys with missing values (e.g., `"key":` with no value)
+- Backtrack to the last complete value in nested structures
 - Remove trailing commas that would make arrays/objects invalid
 - Preserve structure integrity
 
-### 4. Closure Validation
-- Try multiple closure orders (brackets-first vs braces-first)
-- Validate each attempt with the actual Pydantic schema
-- Only accept closures that pass validation
+### 4. Multiple Repair Strategies
+- Try different closure orders (brackets-first vs braces-first)
+- Detect and fill missing required fields with empty array defaults
+- Add missing fields when Pydantic validation reports them as missing
+- Validate each repair attempt with the actual schema
 
-### 5. Graceful Degradation
+### 5. Fallback Field Requests
+- When critical fields are empty after repair, make separate targeted requests
+- Request only the missing field (e.g., "Generate only a JSON array of...")
+- This ensures complete responses even if initial request truncates
+- Gracefully handle markdown-wrapped responses in fallback requests
+
+### 6. Graceful Degradation
 - Maintain detailed error messages with both the original and fixed JSON
 - Show character counts and sample content for debugging
 - Allow the app to continue even with incomplete responses
+- Use empty arrays/objects as defaults when repair fails
 
 ## Code Architecture Improvements
 
@@ -140,7 +165,36 @@ except JSONDecodeError:
 3. Fuzzing tests with randomly truncated JSON
 4. Performance tests to ensure repair logic doesn't add significant overhead
 
-## Conclusion
-Integrating with external LLM services requires defensive programming. Responses may be incomplete, malformed, or wrapped in unexpected formatting. A robust solution layers multiple recovery strategies and validates at each step, allowing graceful degradation when ideal conditions aren't met.
+## Lessons for Multi-Step LLM Integration
 
-The key lesson: **never trust external data to be in the exact format you expect**. Build in recovery mechanisms and detailed logging to help diagnose issues when they occur.
+### When to Use Multiple Requests Instead of Repair
+While JSON repair is powerful, sometimes it's better to request data in smaller pieces:
+
+1. **For complex structured responses:** Request each major field separately rather than everything at once
+2. **For content that's inherently variable:** LLM responses vary in length; asking for fixed-size pieces is more predictable
+3. **For local/fast LLMs:** Since there's no network latency, multiple requests are cheap - worth it for reliability
+4. **When repair becomes complex:** If repair logic is getting convoluted, split into simpler focused requests
+
+### Trade-offs
+- **Pros:** Simpler repair logic, better chance of complete data, easier to validate each piece
+- **Cons:** Multiple round-trips (minor cost for local LLMs), need to orchestrate fallback requests carefully
+
+For CrewChief's `track-prep`, we use both approaches:
+1. **Primary request:** Ask for complete `TrackPrepChecklist` with all fields (fast path)
+2. **Fallback requests:** If fields are empty/missing, make targeted requests for just those fields (robustness)
+
+This hybrid approach gives us both speed and reliability.
+
+## Conclusion
+Integrating with external LLM services requires defensive programming. Responses may be incomplete, malformed, or wrapped in unexpected formatting. A robust solution layers multiple recovery strategies:
+1. Try to parse responses as-is
+2. Repair truncated/malformed JSON
+3. Fill missing fields with defaults
+4. Make targeted fallback requests for missing data
+
+The key lessons:
+- **Never trust external data** to be in the exact format you expect
+- **Build in recovery mechanisms** at multiple levels
+- **Validate at each step** - don't assume a fix will work
+- **For local services, don't optimize for latency** - multiple requests can improve reliability significantly
+- **Always handle markdown** - even when you ask for raw JSON, you'll get markdown wrapped responses
