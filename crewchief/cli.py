@@ -77,6 +77,64 @@ def get_repository() -> GarageRepository:
 
 
 @app.command()
+def commands() -> None:
+    """List all available commands grouped by category."""
+    console.print("\n[bold cyan]CrewChief Commands[/bold cyan]\n")
+
+    # Setup
+    console.print("[bold yellow]Setup[/bold yellow]")
+    console.print("  init-garage        Initialize the garage database")
+    console.print()
+
+    # Car Management
+    console.print("[bold yellow]Car Management[/bold yellow]")
+    console.print("  add-car            Add a new car to your garage")
+    console.print("  list-cars          List all cars")
+    console.print("  show-car <id>      Show detailed info for a car")
+    console.print("  update-car <id>    Update car information")
+    console.print("  remove-car <id>    Remove a car and its history")
+    console.print()
+
+    # Maintenance Logging
+    console.print("[bold yellow]Maintenance Logging[/bold yellow]")
+    console.print("  log-service <id>   Log a maintenance event")
+    console.print("  history <id>       View maintenance history")
+    console.print("  update-service <id> Edit a maintenance record")
+    console.print("  delete-service <id> Delete a maintenance record")
+    console.print()
+
+    # Parts Profile
+    console.print("[bold yellow]Parts Profile[/bold yellow]")
+    console.print("  add-part <id>      Add a part (oil, tires, filters, etc.)")
+    console.print("  list-parts <id>    List all parts for a car")
+    console.print("  update-part <id>   Edit a part")
+    console.print("  delete-part <id>   Delete a part")
+    console.print()
+
+    # Cost Analysis
+    console.print("[bold yellow]Cost Analysis[/bold yellow]")
+    console.print("  cost-summary [id]  Cost breakdown (single car or all)")
+    console.print("  cost-compare       Compare costs across all cars")
+    console.print()
+
+    # Maintenance Intervals
+    console.print("[bold yellow]Maintenance Intervals[/bold yellow]")
+    console.print("  set-interval <id>  Set service intervals (miles/months)")
+    console.print("  check-due [id]     Check which services are due")
+    console.print()
+
+    # AI Features
+    console.print("[bold yellow]AI Features (LLM-powered)[/bold yellow]")
+    console.print("  summary [id]       AI-generated garage/car summary")
+    console.print("  suggest-maint [id] AI maintenance suggestions")
+    console.print("  track-prep <id>    Generate track day checklist")
+    console.print()
+
+    console.print("[dim]Run 'crewchief <command> --help' for detailed help on any command[/dim]")
+    console.print()
+
+
+@app.command()
 def init_garage() -> None:
     """Initialize the garage database and configuration."""
     settings = get_settings()
