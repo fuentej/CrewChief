@@ -656,14 +656,89 @@ def generate_track_prep_checklist(
         maintenance_history=json.dumps(maintenance_data, indent=2),
     )
 
-    # Call LLM with schema validation
-    response = llm_chat(system_prompt, user_prompt, response_schema=TrackPrepChecklist)
+    # Request each field separately to avoid truncation issues
+    # This is more reliable than requesting everything at once
+
+    car_label = car.display_name()
+
+    # Get critical items
+    critical_items = []
+    critical_prompt = f"""For the {car_label}, generate ONLY a JSON array of critical safety items to check before track use.
+Vehicle: {json.dumps(vehicle_data)}
+Maintenance history: {json.dumps(maintenance_data)}
+
+Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
+    critical_response = llm_chat(system_prompt, critical_prompt)
+    try:
+        import re
+        json_str = critical_response.strip()
+        if '```' in json_str:
+            json_str = json_str.replace('```json', '').replace('```', '').strip()
+        json_match = re.search(r'\[[\s\S]*\]', json_str)
+        if json_match:
+            json_str = json_match.group().strip()
+        try:
+            critical_items = json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to repair truncated JSON
+            quote_count = json_str.count('"')
+            if quote_count % 2 == 1:
+                last_quote_idx = json_str.rfind('"')
+                json_str = json_str[:last_quote_idx].rstrip(',').rstrip()
+            if not json_str.endswith(']'):
+                json_str += ']'
+            try:
+                critical_items = json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
+    except Exception:
+        pass
+
+    # Get recommended items
+    recommended_items = []
+    recommended_prompt = f"""For the {car_label}, generate ONLY a JSON array of recommended maintenance items for track prep.
+Vehicle: {json.dumps(vehicle_data)}
+Maintenance history: {json.dumps(maintenance_data)}
+
+Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
+    recommended_response = llm_chat(system_prompt, recommended_prompt)
+    try:
+        import re
+        json_str = recommended_response.strip()
+        if '```' in json_str:
+            json_str = json_str.replace('```json', '').replace('```', '').strip()
+        json_match = re.search(r'\[[\s\S]*\]', json_str)
+        if json_match:
+            json_str = json_match.group().strip()
+        try:
+            recommended_items = json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to repair truncated JSON
+            quote_count = json_str.count('"')
+            if quote_count % 2 == 1:
+                last_quote_idx = json_str.rfind('"')
+                json_str = json_str[:last_quote_idx].rstrip(',').rstrip()
+            if not json_str.endswith(']'):
+                json_str += ']'
+            try:
+                recommended_items = json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
+    except Exception:
+        pass
+
+    # Create response object
+    response = TrackPrepChecklist(
+        car_label=car_label,
+        critical_items=critical_items,
+        recommended_items=recommended_items,
+        notes=None
+    )
 
     if not isinstance(response, TrackPrepChecklist):
         raise LLMResponseError("Expected TrackPrepChecklist response")
 
-    # If critical_items or recommended_items are empty, request them individually
-    # This handles cases where truncation removed entire fields
+    # If critical_items or recommended_items are still empty, try fallback
     if not response.critical_items:
         critical_prompt = f"""For the {car.display_name()}, generate ONLY a JSON array of critical safety items to check before track use.
 Vehicle: {json.dumps(vehicle_data)}
