@@ -407,6 +407,9 @@ def generate_maintenance_suggestions(
         # Strip whitespace and remove markdown code blocks if present
         json_str = response.strip()
 
+        if not json_str:
+            raise LLMResponseError(f"Empty response from LLM. Raw response: {repr(response)}")
+
         # Handle markdown code blocks by finding actual JSON boundaries
         if "```" in json_str:
             # Find the start of actual JSON (either { or [)
