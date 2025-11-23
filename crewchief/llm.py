@@ -673,9 +673,16 @@ Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "it
         critical_response = llm_chat(system_prompt, critical_prompt)
         try:
             import re
-            json_match = re.search(r'\[.*\]', critical_response, re.DOTALL)
+            # Handle markdown code blocks and extract JSON array
+            if '```' in critical_response:
+                # Remove markdown markers
+                critical_response = critical_response.replace('```json', '').replace('```', '')
+
+            # Find JSON array - use greedy match to get complete array
+            json_match = re.search(r'\[[\s\S]*\]', critical_response)
             if json_match:
-                response.critical_items = json.loads(json_match.group())
+                json_str = json_match.group().strip()
+                response.critical_items = json.loads(json_str)
         except (json.JSONDecodeError, AttributeError):
             pass
 
@@ -686,17 +693,19 @@ Maintenance history: {json.dumps(maintenance_data)}
 
 Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
         recommended_response = llm_chat(system_prompt, recommended_prompt)
-        print(f"DEBUG: recommended_response = {repr(recommended_response[:200])}")
         try:
             import re
-            json_match = re.search(r'\[.*\]', recommended_response, re.DOTALL)
-            print(f"DEBUG: json_match = {json_match}")
+            # Handle markdown code blocks and extract JSON array
+            if '```' in recommended_response:
+                # Remove markdown markers
+                recommended_response = recommended_response.replace('```json', '').replace('```', '')
+
+            # Find JSON array - use greedy match to get complete array
+            json_match = re.search(r'\[[\s\S]*\]', recommended_response)
             if json_match:
-                print(f"DEBUG: matched JSON = {repr(json_match.group()[:100])}")
-                response.recommended_items = json.loads(json_match.group())
-                print(f"DEBUG: parsed recommended_items = {response.recommended_items}")
-        except (json.JSONDecodeError, AttributeError) as e:
-            print(f"DEBUG: Failed to parse recommended_items: {e}")
+                json_str = json_match.group().strip()
+                response.recommended_items = json.loads(json_str)
+        except (json.JSONDecodeError, AttributeError):
             # If we still can't get it, use empty list (better than failing)
             response.recommended_items = []
 
