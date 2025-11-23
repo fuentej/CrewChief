@@ -283,7 +283,27 @@ def llm_chat(
             for attempt in attempts:
                 try:
                     return response_schema.model_validate_json(attempt)
-                except (ValidationError, json.JSONDecodeError):
+                except ValidationError as validation_error:
+                    # Check if missing fields are the issue
+                    missing_fields = []
+                    for error in validation_error.errors():
+                        if error['type'] == 'missing':
+                            missing_fields.append(error['loc'][0])
+
+                    # If we have missing fields, try adding them with defaults
+                    if missing_fields and open_braces > 0:
+                        # Try to add missing fields before the closing braces
+                        modified_attempt = attempt.rstrip('}')
+                        for field in missing_fields:
+                            # Add missing list fields as empty arrays
+                            modified_attempt += f', "{field}": []'
+                        modified_attempt += '}'
+
+                        try:
+                            return response_schema.model_validate_json(modified_attempt)
+                        except (ValidationError, json.JSONDecodeError):
+                            pass
+                except json.JSONDecodeError:
                     continue
 
         # If we couldn't fix it, raise the original error with debug info
