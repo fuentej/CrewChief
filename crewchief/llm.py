@@ -693,6 +693,8 @@ Maintenance history: {json.dumps(maintenance_data)}
 
 Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
         recommended_response = llm_chat(system_prompt, recommended_prompt)
+        print(f"DEBUG: recommended_response length = {len(recommended_response)}")
+        print(f"DEBUG: recommended_response = {repr(recommended_response[:300])}")
         try:
             import re
             # Handle markdown code blocks and extract JSON array
@@ -702,10 +704,14 @@ Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "it
 
             # Find JSON array - use greedy match to get complete array
             json_match = re.search(r'\[[\s\S]*\]', recommended_response)
+            print(f"DEBUG: json_match found = {json_match is not None}")
             if json_match:
                 json_str = json_match.group().strip()
+                print(f"DEBUG: parsed json_str = {repr(json_str[:100])}")
                 response.recommended_items = json.loads(json_str)
-        except (json.JSONDecodeError, AttributeError):
+                print(f"DEBUG: final recommended_items count = {len(response.recommended_items)}")
+        except (json.JSONDecodeError, AttributeError) as e:
+            print(f"DEBUG: exception parsing recommended_items: {e}")
             # If we still can't get it, use empty list (better than failing)
             response.recommended_items = []
 
