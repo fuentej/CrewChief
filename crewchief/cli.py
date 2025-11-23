@@ -22,6 +22,7 @@ from crewchief.models import (
     CarPart,
     GarageSnapshot,
     MaintenanceEvent,
+    MaintenanceInterval,
     PartCategory,
     ServiceType,
     UsageType,
@@ -545,6 +546,10 @@ def log_service(
 
     # Add to database
     event = repo.add_maintenance_event(event)
+
+    # Update interval tracking if configured
+    repo.update_interval_after_service(car_id, service_type_enum, service_date_obj, odometer)
+
     repo.close()
 
     console.print(f"\n[green]✓[/green] Service logged successfully! [dim](ID: {event.id})[/dim]")
@@ -1061,6 +1066,139 @@ def cost_compare() -> None:
         console.print(f"\n[bold]Averages:[/bold]")
         console.print(f"  Cost per car: ${avg_cost_per_car:,.2f}")
         console.print(f"  Cost per service: ${avg_cost_per_service:.2f}")
+
+    finally:
+        repo.close()
+
+
+@app.command()
+def set_interval(car_id: int) -> None:
+    """Set maintenance interval for a car service type."""
+    repo = get_repository()
+
+    # Verify car exists
+    car = repo.get_car(car_id)
+    if car is None:
+        console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    console.print(f"Setting maintenance interval for: [bold]{car.display_name()}[/bold]\n")
+
+    # Show available service types
+    console.print("Service types:")
+    for service_type in ServiceType:
+        console.print(f"  - {service_type.value}")
+
+    # Prompt for service type
+    service_type_input = typer.prompt("\nService type")
+    try:
+        service_type = ServiceType(service_type_input.lower())
+    except ValueError:
+        console.print(f"[red]Error:[/red] Invalid service type '{service_type_input}'")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Prompt for intervals
+    console.print(f"\n[dim]Set at least one interval (miles or months)[/dim]")
+
+    interval_miles_input = typer.prompt("Interval in miles (or press Enter to skip)", default="", show_default=False)
+    interval_miles = int(interval_miles_input) if interval_miles_input.strip() else None
+
+    interval_months_input = typer.prompt("Interval in months (or press Enter to skip)", default="", show_default=False)
+    interval_months = int(interval_months_input) if interval_months_input.strip() else None
+
+    if not interval_miles and not interval_months:
+        console.print("[red]Error:[/red] Must set at least one interval (miles or months)")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Optional: Set last service tracking
+    last_service_date_input = typer.prompt(
+        "Last service date (YYYY-MM-DD, or press Enter to skip)", default="", show_default=False
+    )
+    last_service_date = None
+    if last_service_date_input.strip():
+        try:
+            last_service_date = date.fromisoformat(last_service_date_input)
+        except ValueError:
+            console.print("[red]Error:[/red] Invalid date format. Use YYYY-MM-DD")
+            repo.close()
+            raise typer.Exit(code=1)
+
+    last_service_odometer_input = typer.prompt(
+        "Last service odometer (or press Enter to skip)", default="", show_default=False
+    )
+    last_service_odometer = int(last_service_odometer_input) if last_service_odometer_input.strip() else None
+
+    notes_input = typer.prompt("Notes (optional)", default="", show_default=False)
+    notes = notes_input if notes_input.strip() else None
+
+    # Create and save interval
+    interval = MaintenanceInterval(
+        car_id=car_id,
+        service_type=service_type,
+        interval_miles=interval_miles,
+        interval_months=interval_months,
+        last_service_date=last_service_date,
+        last_service_odometer=last_service_odometer,
+        notes=notes,
+    )
+
+    interval = repo.set_maintenance_interval(interval)
+    repo.close()
+
+    console.print(f"\n[green]✓[/green] Maintenance interval set successfully!")
+
+
+@app.command()
+def check_due(
+    car_id: Annotated[int | None, typer.Argument(help="Car ID (optional, checks all if omitted)")] = None,
+) -> None:
+    """Check which maintenance services are due or coming up."""
+    repo = get_repository()
+
+    try:
+        if car_id is not None:
+            # Single car check
+            car = repo.get_car(car_id)
+            if car is None:
+                console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+                repo.close()
+                raise typer.Exit(code=1)
+
+            cars_to_check = [car]
+        else:
+            # All cars
+            cars_to_check = repo.get_cars()
+            if not cars_to_check:
+                console.print("[yellow]No cars in garage[/yellow]")
+                return
+
+        console.print("\n[bold cyan]⏰ Maintenance Due Check[/bold cyan]\n")
+
+        found_due = False
+        for car in cars_to_check:
+            due_services = repo.get_due_services(car.id)
+
+            # Filter to only due services
+            due_only = [s for s in due_services if s["is_due"]]
+
+            if due_only:
+                found_due = True
+                console.print(f"[bold]{car.display_name()}[/bold]")
+
+                for service in due_only:
+                    service_name = service["service_type"].value.replace("_", " ").title()
+                    console.print(f"  • {service_name}: [yellow]{service['reason']}[/yellow]")
+
+                console.print()
+
+        if not found_due:
+            if car_id is not None:
+                console.print(f"[green]✓[/green] {cars_to_check[0].display_name()} has no overdue services")
+            else:
+                console.print("[green]✓[/green] No overdue services across all cars")
 
     finally:
         repo.close()

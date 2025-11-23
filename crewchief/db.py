@@ -5,7 +5,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from crewchief.models import Car, CarPart, MaintenanceEvent, PartCategory, ServiceType, UsageType
+from crewchief.models import Car, CarPart, MaintenanceEvent, MaintenanceInterval, PartCategory, ServiceType, UsageType
 
 # Register datetime adapters to suppress Python 3.13 deprecation warnings
 sqlite3.register_adapter(datetime, lambda val: val.isoformat() if val else None)
@@ -92,6 +92,26 @@ class GarageRepository:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (car_id) REFERENCES cars(id)
+            )
+        """
+        )
+
+        # Create maintenance_intervals table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS maintenance_intervals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_id INTEGER NOT NULL,
+                service_type TEXT NOT NULL,
+                interval_miles INTEGER,
+                interval_months INTEGER,
+                last_service_date DATE,
+                last_service_odometer INTEGER,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (car_id) REFERENCES cars(id),
+                UNIQUE(car_id, service_type)
             )
         """
         )
@@ -633,6 +653,148 @@ class GarageRepository:
             "cost_per_mile": total_cost / total_miles if total_miles > 0 else 0,
         }
 
+    def set_maintenance_interval(self, interval: MaintenanceInterval) -> MaintenanceInterval:
+        """Set or update a maintenance interval for a car.
+
+        Uses REPLACE to handle updates to existing intervals.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            REPLACE INTO maintenance_intervals (
+                car_id, service_type, interval_miles, interval_months,
+                last_service_date, last_service_odometer, notes,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                interval.car_id,
+                interval.service_type.value,
+                interval.interval_miles,
+                interval.interval_months,
+                interval.last_service_date.isoformat() if interval.last_service_date else None,
+                interval.last_service_odometer,
+                interval.notes,
+                interval.created_at,
+                interval.updated_at,
+            ),
+        )
+
+        conn.commit()
+        interval.id = cursor.lastrowid
+        return interval
+
+    def get_maintenance_intervals(self, car_id: int) -> list[MaintenanceInterval]:
+        """Get all maintenance intervals for a specific car."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM maintenance_intervals WHERE car_id = ? ORDER BY service_type",
+            (car_id,),
+        )
+        rows = cursor.fetchall()
+
+        intervals = []
+        for row in rows:
+            interval = self._row_to_maintenance_interval(row)
+            intervals.append(interval)
+
+        return intervals
+
+    def get_due_services(self, car_id: int) -> list[dict]:
+        """Calculate which services are due or overdue for a car.
+
+        Returns:
+            List of dicts with service info and due status.
+        """
+        from datetime import timedelta
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Get car info
+        car = self.get_car(car_id)
+        if not car:
+            return []
+
+        # Get all intervals
+        intervals = self.get_maintenance_intervals(car_id)
+
+        today = date.today()
+        due_services = []
+
+        for interval in intervals:
+            due_info = {
+                "service_type": interval.service_type,
+                "interval_miles": interval.interval_miles,
+                "interval_months": interval.interval_months,
+                "last_service_date": interval.last_service_date,
+                "last_service_odometer": interval.last_service_odometer,
+                "is_due": False,
+                "miles_until_due": None,
+                "months_until_due": None,
+                "reason": None,
+            }
+
+            # Check mileage-based intervals
+            if interval.interval_miles and car.current_odometer and interval.last_service_odometer is not None:
+                miles_since = car.current_odometer - interval.last_service_odometer
+                miles_until = interval.interval_miles - miles_since
+
+                due_info["miles_until_due"] = miles_until
+
+                if miles_since >= interval.interval_miles:
+                    due_info["is_due"] = True
+                    due_info["reason"] = f"Overdue by {miles_since - interval.interval_miles:,} miles"
+                elif miles_until <= 500:  # Warning threshold
+                    due_info["is_due"] = True
+                    due_info["reason"] = f"Due soon ({miles_until:,} miles remaining)"
+
+            # Check time-based intervals
+            if interval.interval_months and interval.last_service_date:
+                months_since = (today.year - interval.last_service_date.year) * 12 + (
+                    today.month - interval.last_service_date.month
+                )
+                months_until = interval.interval_months - months_since
+
+                due_info["months_until_due"] = months_until
+
+                if months_since >= interval.interval_months:
+                    due_info["is_due"] = True
+                    if due_info["reason"]:
+                        due_info["reason"] += f" and {months_since - interval.interval_months} months"
+                    else:
+                        due_info["reason"] = f"Overdue by {months_since - interval.interval_months} months"
+                elif months_until <= 1:  # Warning threshold
+                    if not due_info["is_due"]:
+                        due_info["is_due"] = True
+                        due_info["reason"] = f"Due soon ({months_until} month(s) remaining)"
+
+            due_services.append(due_info)
+
+        return due_services
+
+    def update_interval_after_service(
+        self, car_id: int, service_type: ServiceType, service_date: date, odometer: int | None
+    ) -> None:
+        """Update the last service tracking for an interval after logging service."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE maintenance_intervals
+            SET last_service_date = ?, last_service_odometer = ?, updated_at = ?
+            WHERE car_id = ? AND service_type = ?
+            """,
+            (service_date.isoformat(), odometer, datetime.now(), car_id, service_type.value),
+        )
+
+        conn.commit()
+
     def _row_to_car(self, row: sqlite3.Row) -> Car:
         """Convert a database row to a Car model."""
         return Car(
@@ -674,6 +836,21 @@ class GarageRepository:
             brand=row["brand"],
             part_number=row["part_number"],
             size_spec=row["size_spec"],
+            notes=row["notes"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
+        )
+
+    def _row_to_maintenance_interval(self, row: sqlite3.Row) -> MaintenanceInterval:
+        """Convert a database row to a MaintenanceInterval model."""
+        return MaintenanceInterval(
+            id=row["id"],
+            car_id=row["car_id"],
+            service_type=ServiceType(row["service_type"]),
+            interval_miles=row["interval_miles"],
+            interval_months=row["interval_months"],
+            last_service_date=date.fromisoformat(row["last_service_date"]) if row["last_service_date"] else None,
+            last_service_odometer=row["last_service_odometer"],
             notes=row["notes"],
             created_at=datetime.fromisoformat(row["created_at"]),
             updated_at=datetime.fromisoformat(row["updated_at"]),

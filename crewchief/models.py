@@ -109,6 +109,21 @@ class CarPart(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.now)
 
 
+class MaintenanceInterval(BaseModel):
+    """Represents a maintenance interval configuration for a car."""
+
+    id: int | None = None
+    car_id: int
+    service_type: ServiceType
+    interval_miles: int | None = Field(default=None, ge=0)
+    interval_months: int | None = Field(default=None, ge=0)
+    last_service_date: date | None = None
+    last_service_odometer: int | None = Field(default=None, ge=0)
+    notes: str | None = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+
 # LLM-Specific Models (Not Persisted)
 class GarageSnapshot(BaseModel):
     """Snapshot of the garage for LLM context."""
