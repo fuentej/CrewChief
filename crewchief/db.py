@@ -5,7 +5,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from crewchief.models import Car, MaintenanceEvent, ServiceType, UsageType
+from crewchief.models import Car, CarPart, MaintenanceEvent, PartCategory, ServiceType, UsageType
 
 # Register datetime adapters to suppress Python 3.13 deprecation warnings
 sqlite3.register_adapter(datetime, lambda val: val.isoformat() if val else None)
@@ -73,6 +73,24 @@ class GarageRepository:
                 cost REAL,
                 location TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (car_id) REFERENCES cars(id)
+            )
+        """
+        )
+
+        # Create car_parts table
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS car_parts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_id INTEGER NOT NULL,
+                part_category TEXT NOT NULL,
+                brand TEXT,
+                part_number TEXT,
+                size_spec TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (car_id) REFERENCES cars(id)
             )
         """
@@ -354,6 +372,141 @@ class GarageRepository:
         conn.commit()
         return True
 
+    def add_car_part(self, part: CarPart) -> CarPart:
+        """Add a car part to the database and return it with ID."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO car_parts (
+                car_id, part_category, brand, part_number, size_spec, notes,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                part.car_id,
+                part.part_category.value,
+                part.brand,
+                part.part_number,
+                part.size_spec,
+                part.notes,
+                part.created_at,
+                part.updated_at,
+            ),
+        )
+
+        conn.commit()
+        part.id = cursor.lastrowid
+        return part
+
+    def get_car_parts(self, car_id: int) -> list[CarPart]:
+        """Get all parts for a specific car."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM car_parts WHERE car_id = ? ORDER BY part_category",
+            (car_id,),
+        )
+        rows = cursor.fetchall()
+
+        parts = []
+        for row in rows:
+            part = self._row_to_car_part(row)
+            parts.append(part)
+
+        return parts
+
+    def get_car_part(self, part_id: int) -> CarPart | None:
+        """Get a specific car part by ID."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM car_parts WHERE id = ?", (part_id,))
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return self._row_to_car_part(row)
+
+    def update_car_part(
+        self,
+        part_id: int,
+        brand: str | None = None,
+        part_number: str | None = None,
+        size_spec: str | None = None,
+        notes: str | None = None,
+    ) -> CarPart | None:
+        """Update specific fields of a car part.
+
+        Only the provided fields are updated. Returns the updated part or None if not found.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Check if part exists
+        cursor.execute("SELECT * FROM car_parts WHERE id = ?", (part_id,))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        # Get current values
+        current_part = self._row_to_car_part(row)
+
+        # Update only provided fields
+        if brand is not None:
+            current_part.brand = brand
+        if part_number is not None:
+            current_part.part_number = part_number
+        if size_spec is not None:
+            current_part.size_spec = size_spec
+        if notes is not None:
+            current_part.notes = notes
+
+        current_part.updated_at = datetime.now()
+
+        # Execute update
+        cursor.execute(
+            """
+            UPDATE car_parts
+            SET brand = ?, part_number = ?, size_spec = ?, notes = ?, updated_at = ?
+            WHERE id = ?
+        """,
+            (
+                current_part.brand,
+                current_part.part_number,
+                current_part.size_spec,
+                current_part.notes,
+                current_part.updated_at,
+                part_id,
+            ),
+        )
+
+        conn.commit()
+        return current_part
+
+    def delete_car_part(self, part_id: int) -> bool:
+        """Delete a car part by ID.
+
+        Returns:
+            True if part was deleted, False if part not found.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Check if part exists
+        cursor.execute("SELECT id FROM car_parts WHERE id = ?", (part_id,))
+        if cursor.fetchone() is None:
+            return False
+
+        # Delete the part
+        cursor.execute("DELETE FROM car_parts WHERE id = ?", (part_id,))
+
+        conn.commit()
+        return True
+
     def _row_to_car(self, row: sqlite3.Row) -> Car:
         """Convert a database row to a Car model."""
         return Car(
@@ -384,4 +537,18 @@ class GarageRepository:
             cost=row["cost"],
             location=row["location"],
             created_at=datetime.fromisoformat(row["created_at"]),
+        )
+
+    def _row_to_car_part(self, row: sqlite3.Row) -> CarPart:
+        """Convert a database row to a CarPart model."""
+        return CarPart(
+            id=row["id"],
+            car_id=row["car_id"],
+            part_category=PartCategory(row["part_category"]),
+            brand=row["brand"],
+            part_number=row["part_number"],
+            size_spec=row["size_spec"],
+            notes=row["notes"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
         )

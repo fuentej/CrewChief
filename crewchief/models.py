@@ -37,6 +37,24 @@ class Priority(str, Enum):
     LOW = "low"
 
 
+class PartCategory(str, Enum):
+    """Category of car part."""
+
+    OIL = "oil"
+    OIL_FILTER = "oil_filter"
+    TIRES = "tires"
+    WIPERS = "wipers"
+    AIR_FILTER = "air_filter"
+    CABIN_FILTER = "cabin_filter"
+    BRAKE_PADS = "brake_pads"
+    BRAKE_FLUID = "brake_fluid"
+    COOLANT = "coolant"
+    TRANSMISSION_FLUID = "transmission_fluid"
+    SPARK_PLUGS = "spark_plugs"
+    BATTERY = "battery"
+    OTHER = "other"
+
+
 # Core Data Models
 class Car(BaseModel):
     """Represents a vehicle in the garage."""
@@ -75,6 +93,20 @@ class MaintenanceEvent(BaseModel):
     cost: float | None = Field(default=None, ge=0)
     location: str | None = None
     created_at: datetime = Field(default_factory=datetime.now)
+
+
+class CarPart(BaseModel):
+    """Represents a part in a car's parts profile."""
+
+    id: int | None = None
+    car_id: int
+    part_category: PartCategory
+    brand: str | None = None
+    part_number: str | None = None
+    size_spec: str | None = None
+    notes: str | None = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 # LLM-Specific Models (Not Persisted)

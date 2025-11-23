@@ -19,8 +19,10 @@ from crewchief.llm import (
 )
 from crewchief.models import (
     Car,
+    CarPart,
     GarageSnapshot,
     MaintenanceEvent,
+    PartCategory,
     ServiceType,
     UsageType,
 )
@@ -460,6 +462,36 @@ def log_service(
         repo.close()
         raise typer.Exit(code=1)
 
+    # Show relevant parts from profile
+    car_parts = repo.get_car_parts(car_id)
+    if car_parts:
+        # Map service types to relevant part categories
+        relevant_categories = {
+            ServiceType.OIL_CHANGE: [PartCategory.OIL, PartCategory.OIL_FILTER],
+            ServiceType.TIRES: [PartCategory.TIRES],
+            ServiceType.BRAKES: [PartCategory.BRAKE_PADS, PartCategory.BRAKE_FLUID],
+            ServiceType.FLUIDS: [PartCategory.COOLANT, PartCategory.TRANSMISSION_FLUID, PartCategory.BRAKE_FLUID],
+        }
+
+        relevant_parts = [
+            p for p in car_parts
+            if service_type_enum in relevant_categories
+            and p.part_category in relevant_categories[service_type_enum]
+        ]
+
+        if relevant_parts:
+            console.print("\n[cyan]Parts from profile:[/cyan]")
+            for part in relevant_parts:
+                part_info = f"  {part.part_category.value.replace('_', ' ').title()}"
+                if part.brand:
+                    part_info += f": {part.brand}"
+                if part.part_number:
+                    part_info += f" ({part.part_number})"
+                if part.size_spec:
+                    part_info += f" - {part.size_spec}"
+                console.print(part_info)
+            console.print()
+
     # Parse or prompt for date
     if service_date is None:
         service_date_obj = date.today()
@@ -667,6 +699,192 @@ def delete_service(event_id: int) -> None:
         console.print(f"\n[green]✓[/green] Service record deleted successfully!")
     else:
         console.print(f"[red]Error:[/red] Could not delete record")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def add_part(car_id: int) -> None:
+    """Add a part to a car's parts profile."""
+    repo = get_repository()
+
+    # Verify car exists
+    car = repo.get_car(car_id)
+    if car is None:
+        console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    console.print(f"Adding part for: [bold]{car.display_name()}[/bold]\n")
+
+    # Show available categories
+    console.print("Part categories:")
+    for category in PartCategory:
+        console.print(f"  - {category.value}")
+
+    # Prompt for category
+    category_input = typer.prompt("\nPart category")
+    try:
+        category = PartCategory(category_input.lower())
+    except ValueError:
+        console.print(f"[red]Error:[/red] Invalid category '{category_input}'")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Prompt for details
+    brand = typer.prompt("Brand (optional)", default="", show_default=False)
+    brand = brand if brand.strip() else None
+
+    part_number = typer.prompt("Part number (optional)", default="", show_default=False)
+    part_number = part_number if part_number.strip() else None
+
+    size_spec = typer.prompt("Size/Spec (optional)", default="", show_default=False)
+    size_spec = size_spec if size_spec.strip() else None
+
+    notes = typer.prompt("Notes (optional)", default="", show_default=False)
+    notes = notes if notes.strip() else None
+
+    # Create and save part
+    part = CarPart(
+        car_id=car_id,
+        part_category=category,
+        brand=brand,
+        part_number=part_number,
+        size_spec=size_spec,
+        notes=notes,
+    )
+
+    part = repo.add_car_part(part)
+    repo.close()
+
+    console.print(f"\n[green]✓[/green] Part added successfully! [dim](ID: {part.id})[/dim]")
+
+
+@app.command()
+def list_parts(car_id: int) -> None:
+    """List all parts for a car."""
+    repo = get_repository()
+
+    car = repo.get_car(car_id)
+    if car is None:
+        console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    parts = repo.get_car_parts(car_id)
+    repo.close()
+
+    console.print(f"\n[bold]Parts Profile: {car.display_name()}[/bold]\n")
+
+    if not parts:
+        console.print("[yellow]No parts recorded[/yellow]")
+        return
+
+    table = Table()
+    table.add_column("ID", style="dim")
+    table.add_column("Category", style="cyan")
+    table.add_column("Brand")
+    table.add_column("Part Number")
+    table.add_column("Size/Spec")
+
+    for part in parts:
+        category_display = part.part_category.value.replace("_", " ").title()
+        table.add_row(
+            str(part.id),
+            category_display,
+            part.brand or "—",
+            part.part_number or "—",
+            part.size_spec or "—",
+        )
+
+    console.print(table)
+
+
+@app.command()
+def update_part(part_id: int) -> None:
+    """Edit a part in a car's parts profile."""
+    repo = get_repository()
+
+    # Get the part
+    part = repo.get_car_part(part_id)
+    if part is None:
+        console.print(f"[red]Error:[/red] Part with ID {part_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Get the car for context
+    car = repo.get_car(part.car_id)
+
+    console.print(f"\n[bold]Editing Part (ID: {part_id})[/bold]")
+    console.print(f"Car: {car.display_name() if car else 'Unknown'}")
+    console.print(f"Category: {part.part_category.value.replace('_', ' ').title()}\n")
+
+    # Show current values
+    console.print("[dim]Leave blank to keep current value[/dim]\n")
+
+    # Prompt for updates
+    brand_input = typer.prompt("Brand (or press Enter to skip)", default="", show_default=False)
+    brand = brand_input if brand_input.strip() else None
+
+    part_number_input = typer.prompt("Part number (or press Enter to skip)", default="", show_default=False)
+    part_number = part_number_input if part_number_input.strip() else None
+
+    size_spec_input = typer.prompt("Size/Spec (or press Enter to skip)", default="", show_default=False)
+    size_spec = size_spec_input if size_spec_input.strip() else None
+
+    notes_input = typer.prompt("Notes (or press Enter to skip)", default="", show_default=False)
+    notes = notes_input if notes_input.strip() else None
+
+    # Update the part
+    updated_part = repo.update_car_part(
+        part_id,
+        brand=brand,
+        part_number=part_number,
+        size_spec=size_spec,
+        notes=notes,
+    )
+
+    repo.close()
+
+    console.print(f"\n[green]✓[/green] Part updated successfully!")
+
+
+@app.command()
+def delete_part(part_id: int) -> None:
+    """Delete a part from a car's parts profile."""
+    repo = get_repository()
+
+    # Get the part to display info
+    part = repo.get_car_part(part_id)
+    if part is None:
+        console.print(f"[red]Error:[/red] Part with ID {part_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Get the car for context
+    car = repo.get_car(part.car_id)
+
+    console.print(f"\n[bold]Delete Part[/bold]")
+    console.print(f"Car: {car.display_name() if car else 'Unknown'}")
+    console.print(f"Category: {part.part_category.value.replace('_', ' ').title()}")
+    if part.brand:
+        console.print(f"Brand: {part.brand}")
+    if part.part_number:
+        console.print(f"Part Number: {part.part_number}")
+
+    if not typer.confirm("\nAre you sure you want to delete this part?"):
+        console.print("Cancelled.")
+        repo.close()
+        raise typer.Exit()
+
+    # Delete the part
+    deleted = repo.delete_car_part(part_id)
+
+    repo.close()
+
+    if deleted:
+        console.print(f"\n[green]✓[/green] Part deleted successfully!")
+    else:
+        console.print(f"[red]Error:[/red] Could not delete part")
         raise typer.Exit(code=1)
 
 
