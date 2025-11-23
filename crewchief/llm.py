@@ -434,6 +434,7 @@ def generate_maintenance_suggestions(
                 # Track depth of nesting while respecting strings
                 in_string = False
                 escape_next = False
+                json_end_idx = -1
                 for i, char in enumerate(json_str_candidate):
                     if escape_next:
                         escape_next = False
@@ -449,8 +450,15 @@ def generate_maintenance_suggestions(
                         elif char in ("}", "]"):
                             open_count -= 1
                             if open_count == 0:
-                                json_str = json_str_candidate[:i+1]
+                                json_end_idx = i
                                 break
+
+                # Extract JSON if we found the end, otherwise take what we can
+                if json_end_idx >= 0:
+                    json_str = json_str_candidate[:json_end_idx+1]
+                else:
+                    # Fallback: just use from start_idx onwards
+                    json_str = json_str_candidate
 
         json_str = json_str.strip()
 
@@ -458,11 +466,6 @@ def generate_maintenance_suggestions(
         try:
             suggestions_data = json.loads(json_str)
         except json.JSONDecodeError as initial_error:
-            print(f"DEBUG: Initial JSON parse failed")
-            print(f"DEBUG: json_str length: {len(json_str)}")
-            print(f"DEBUG: json_str first 200 chars: {repr(json_str[:200])}")
-            print(f"DEBUG: json_str last 200 chars: {repr(json_str[-200:])}")
-            print(f"DEBUG: Initial error: {initial_error}")
             # If JSON is incomplete, try to fix it by closing open structures
             fixed_json = json_str
 
