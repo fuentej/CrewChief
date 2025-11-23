@@ -264,6 +264,96 @@ class GarageRepository:
 
         return events
 
+    def get_maintenance_event(self, event_id: int) -> MaintenanceEvent | None:
+        """Get a specific maintenance event by ID."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM maintenance_events WHERE id = ?", (event_id,))
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return self._row_to_maintenance_event(row)
+
+    def update_maintenance_event(
+        self,
+        event_id: int,
+        odometer: int | None = None,
+        description: str | None = None,
+        parts: str | None = None,
+        cost: float | None = None,
+        location: str | None = None,
+    ) -> MaintenanceEvent | None:
+        """Update specific fields of a maintenance event.
+
+        Only the provided fields are updated. Returns the updated event or None if not found.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Check if event exists
+        cursor.execute("SELECT * FROM maintenance_events WHERE id = ?", (event_id,))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        # Get current values
+        current_event = self._row_to_maintenance_event(row)
+
+        # Update only provided fields
+        if odometer is not None:
+            current_event.odometer = odometer
+        if description is not None:
+            current_event.description = description
+        if parts is not None:
+            current_event.parts = parts
+        if cost is not None:
+            current_event.cost = cost
+        if location is not None:
+            current_event.location = location
+
+        # Execute update
+        cursor.execute(
+            """
+            UPDATE maintenance_events
+            SET odometer = ?, description = ?, parts = ?, cost = ?, location = ?
+            WHERE id = ?
+        """,
+            (
+                current_event.odometer,
+                current_event.description,
+                current_event.parts,
+                current_event.cost,
+                current_event.location,
+                event_id,
+            ),
+        )
+
+        conn.commit()
+        return current_event
+
+    def delete_maintenance_event(self, event_id: int) -> bool:
+        """Delete a maintenance event by ID.
+
+        Returns:
+            True if event was deleted, False if event not found.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Check if event exists
+        cursor.execute("SELECT id FROM maintenance_events WHERE id = ?", (event_id,))
+        if cursor.fetchone() is None:
+            return False
+
+        # Delete the event
+        cursor.execute("DELETE FROM maintenance_events WHERE id = ?", (event_id,))
+
+        conn.commit()
+        return True
+
     def _row_to_car(self, row: sqlite3.Row) -> Car:
         """Convert a database row to a Car model."""
         return Car(

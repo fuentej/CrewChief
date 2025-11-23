@@ -474,7 +474,25 @@ def log_service(
 
     # Optional prompts
     if odometer is None and typer.confirm("Record odometer reading?", default=False):
-        odometer = typer.prompt("Odometer", type=int)
+        while True:
+            odometer = typer.prompt("Odometer", type=int)
+
+            # Validate odometer against current_odometer
+            if car.current_odometer is not None and odometer < car.current_odometer:
+                console.print(
+                    f"[yellow]Warning:[/yellow] Service odometer ({odometer:,}) is less than car's current odometer ({car.current_odometer:,})"
+                )
+                if not typer.confirm("Accept this odometer reading?"):
+                    continue
+                break
+            elif car.current_odometer is not None and odometer > car.current_odometer:
+                console.print(
+                    f"[cyan]Note:[/cyan] Service odometer ({odometer:,}) is higher than current odometer ({car.current_odometer:,})"
+                )
+                if typer.confirm("Update car's current odometer to this value?"):
+                    car.current_odometer = odometer
+                    repo.update_car(car)
+            break
 
     if description is None:
         description = typer.prompt("Description (optional)", default="", show_default=False)
@@ -541,6 +559,115 @@ def history(car_id: int) -> None:
         )
 
     console.print(table)
+
+
+@app.command()
+def update_service(event_id: int) -> None:
+    """Edit a maintenance record."""
+    repo = get_repository()
+
+    # Get the event
+    event = repo.get_maintenance_event(event_id)
+    if event is None:
+        console.print(f"[red]Error:[/red] Maintenance record with ID {event_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Get the car for context
+    car = repo.get_car(event.car_id)
+
+    console.print(f"\n[bold]Editing Service Record (ID: {event_id})[/bold]")
+    console.print(f"Car: {car.display_name() if car else 'Unknown'}")
+    console.print(f"Service Date: {event.service_date}")
+    console.print(f"Service Type: {event.service_type.value.replace('_', ' ').title()}\n")
+
+    # Show current values
+    console.print("[dim]Leave blank to keep current value[/dim]\n")
+    current_odometer = f"{event.odometer:,}" if event.odometer else "—"
+    console.print(f"Current odometer: {current_odometer}")
+
+    # Prompt for updates
+    odometer_input = typer.prompt("New odometer (or press Enter to skip)", default="", show_default=False)
+    odometer = None
+    if odometer_input.strip():
+        try:
+            odometer = int(odometer_input)
+        except ValueError:
+            console.print("[red]Error:[/red] Odometer must be a number")
+            repo.close()
+            raise typer.Exit(code=1)
+
+    description_input = typer.prompt("Description (or press Enter to skip)", default="", show_default=False)
+    description = description_input if description_input.strip() else None
+
+    parts_input = typer.prompt("Parts (or press Enter to skip)", default="", show_default=False)
+    parts = parts_input if parts_input.strip() else None
+
+    cost_input = typer.prompt("Cost (or press Enter to skip)", default="", show_default=False)
+    cost = None
+    if cost_input.strip():
+        try:
+            cost = float(cost_input)
+        except ValueError:
+            console.print("[red]Error:[/red] Cost must be a number")
+            repo.close()
+            raise typer.Exit(code=1)
+
+    location_input = typer.prompt("Location (or press Enter to skip)", default="", show_default=False)
+    location = location_input if location_input.strip() else None
+
+    # Update the event
+    updated_event = repo.update_maintenance_event(
+        event_id,
+        odometer=odometer,
+        description=description,
+        parts=parts,
+        cost=cost,
+        location=location,
+    )
+
+    repo.close()
+
+    console.print(f"\n[green]✓[/green] Service record updated successfully!")
+
+
+@app.command()
+def delete_service(event_id: int) -> None:
+    """Delete a maintenance record."""
+    repo = get_repository()
+
+    # Get the event to display info
+    event = repo.get_maintenance_event(event_id)
+    if event is None:
+        console.print(f"[red]Error:[/red] Maintenance record with ID {event_id} not found")
+        repo.close()
+        raise typer.Exit(code=1)
+
+    # Get the car for context
+    car = repo.get_car(event.car_id)
+
+    console.print(f"\n[bold]Delete Service Record[/bold]")
+    console.print(f"Car: {car.display_name() if car else 'Unknown'}")
+    console.print(f"Date: {event.service_date}")
+    console.print(f"Type: {event.service_type.value.replace('_', ' ').title()}")
+    if event.description:
+        console.print(f"Description: {event.description}")
+
+    if not typer.confirm("\nAre you sure you want to delete this record?"):
+        console.print("Cancelled.")
+        repo.close()
+        raise typer.Exit()
+
+    # Delete the event
+    deleted = repo.delete_maintenance_event(event_id)
+
+    repo.close()
+
+    if deleted:
+        console.print(f"\n[green]✓[/green] Service record deleted successfully!")
+    else:
+        console.print(f"[red]Error:[/red] Could not delete record")
+        raise typer.Exit(code=1)
 
 
 # Phase 4: LLM-powered features
