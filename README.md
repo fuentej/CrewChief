@@ -2,16 +2,31 @@
 
 **Local-first garage and maintenance assistant powered by Foundry Local**
 
+> **Note:** CrewChief is a **demonstration project** showcasing local-first LLM integration patterns and best practices for building AI-powered CLI applications. See [LESSONS_LEARNED.md](LESSONS_LEARNED.md) for insights on working with local LLM services, handling JSON parsing, and defensive programming strategies.
+
 CrewChief is a Python CLI application that helps you manage your garage and track maintenance for multiple vehicles, with AI-powered suggestions and insights using a local LLM.
 
 ## Features
 
 - **Garage Management**: Track multiple vehicles with detailed metadata
+- **Parts Profile**: Track specific parts (oil, tires, filters) with brand and specs
 - **Maintenance Logging**: Record service history, parts, and costs
+- **Cost Analysis**: Track spending, cost per mile, compare across vehicles
+- **Maintenance Intervals**: Set service schedules, get reminders for due services
 - **AI Summaries**: Get intelligent overviews of your fleet (requires Foundry Local)
 - **Maintenance Planning**: AI-powered suggestions for upcoming service
 - **Track Prep**: Generate custom track day checklists for your cars
 - **Local-First**: All data stays on your machine, no cloud services required
+
+### Learning from This Project
+
+This project demonstrates production-ready patterns for local LLM integration, including:
+- Handling truncated JSON responses from local LLM services
+- Multiple small requests vs. single large requests strategy
+- Defensive JSON parsing with markdown extraction
+- Temperature tuning for structured vs. creative outputs
+
+See **[LESSONS_LEARNED.md](LESSONS_LEARNED.md)** for detailed insights on building reliable LLM-powered applications.
 
 ## Requirements
 
@@ -260,17 +275,44 @@ CREWCHIEF_LLM_TIMEOUT=30
 
 ## Commands
 
-- `init-garage` - Initialize database and configuration
-- `add-car` - Add a new vehicle to your garage
-- `list-cars` - Show all vehicles
-- `show-car <id>` - Display details for a specific car
-- `update-car <id>` - Update car information (VIN, odometer, etc.)
-- `remove-car <id>` - Remove a car and its maintenance history
-- `log-service <id>` - Record a maintenance event
-- `history <id>` - View maintenance history for a car
-- `summary` - Get AI summary of your garage (requires Foundry Local)
-- `suggest-maint` - Get AI maintenance recommendations (requires Foundry Local)
-- `track-prep <id>` - Generate track day checklist (requires Foundry Local)
+CrewChief provides 21 commands organized by category. Run `crewchief commands` for a formatted list, or `crewchief <command> --help` for detailed help on any command.
+
+### Setup
+- `init-garage` - Initialize the garage database and configuration
+
+### Car Management
+- `add-car` - Add a new car to your garage
+- `list-cars` - List all cars
+- `show-car <id>` - Show detailed info for a car
+- `update-car <id>` - Update car information
+- `remove-car <id>` - Remove a car and its history
+
+### Maintenance Logging
+- `log-service <id>` - Log a maintenance event
+- `history <id>` - View maintenance history
+- `update-service <id>` - Edit a maintenance record
+- `delete-service <id>` - Delete a maintenance record
+
+### Parts Profile
+- `add-part <id>` - Add a part (oil, tires, filters, etc.)
+- `list-parts <id>` - List all parts for a car
+- `update-part <id>` - Edit a part
+- `delete-part <id>` - Delete a part
+
+### Cost Analysis
+- `cost-summary [id]` - Cost breakdown (single car or all)
+- `cost-compare` - Compare costs across all cars
+
+### Maintenance Intervals
+- `set-interval <id>` - Set service intervals (miles/months)
+- `check-due [id]` - Check which services are due
+
+### AI Features (LLM-powered)
+- `summary [id]` - AI-generated garage/car summary
+- `suggest-maint [id]` - AI maintenance suggestions
+- `track-prep <id>` - Generate track day checklist
+
+> **Tip:** Use `crewchief commands` to see this list in your terminal with color-coded categories.
 
 ## Development
 
@@ -300,18 +342,26 @@ CrewChief is built with:
 
 ## Project Status
 
-✅ **Version 1.0.0** - Core features complete! Phase 1-4 implemented with comprehensive test suite.
+✅ **Version 1.1.0** - Core features plus advanced tracking capabilities!
 
-**Completed:**
+**Completed (v1.0):**
 - ✅ Phase 1: Package structure, configuration, basic CLI
 - ✅ Phase 2: Pydantic models, SQLite database, CRUD operations
 - ✅ Phase 3: LLM integration with Azure AI Foundry Local
 - ✅ Phase 4: AI-powered CLI commands (summary, suggestions, track prep)
 - ✅ Phase 5: Comprehensive test suite (models, database, LLM, CLI)
 
-**Remaining:**
-- Documentation polish
-- Additional error handling edge cases
+**Completed (v1.1 - Expansion):**
+- ✅ Parts Profile System: Track specific parts (oil, tires, filters, etc.)
+- ✅ Individual Car Summaries: AI summaries and suggestions per-car
+- ✅ Cost Analysis: Track spending, cost per mile, compare across cars
+- ✅ Maintenance Intervals: Set schedules, auto-track due services
+- ✅ Enhanced LLM Integration: Multiple small requests to avoid truncation
+- ✅ Commands Browser: `crewchief commands` for easy discovery
+
+**Future Enhancements:**
+- Export/Import functionality (CSV/JSON)
+- Total Cost of Ownership (TCO) tracking
 
 ## License
 
