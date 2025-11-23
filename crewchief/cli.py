@@ -888,6 +888,184 @@ def delete_part(part_id: int) -> None:
         raise typer.Exit(code=1)
 
 
+@app.command()
+def cost_summary(
+    car_id: Annotated[int | None, typer.Argument(help="Car ID (optional, shows all if omitted)")] = None,
+) -> None:
+    """Display maintenance cost breakdown for a car or all cars."""
+    repo = get_repository()
+
+    try:
+        if car_id is not None:
+            # Single car costs
+            car = repo.get_car(car_id)
+            if car is None:
+                console.print(f"[red]Error:[/red] Car with ID {car_id} not found")
+                repo.close()
+                raise typer.Exit(code=1)
+
+            costs = repo.get_maintenance_costs(car_id)
+            cost_per_mile = repo.get_cost_per_mile(car_id)
+
+            console.print(f"\n[bold cyan]💰 Cost Summary: {car.display_name()}[/bold cyan]\n")
+
+            if not costs or car_id not in costs:
+                console.print("[yellow]No maintenance records with costs found[/yellow]")
+                repo.close()
+                return
+
+            car_costs = costs[car_id]
+
+            # Summary stats
+            console.print(f"[bold]Total Maintenance Cost:[/bold] ${car_costs['total']:,.2f}")
+            console.print(f"[bold]Services Logged:[/bold] {car_costs['count']}")
+            console.print(f"[bold]Total Miles:[/bold] {cost_per_mile['total_miles']:,}")
+            if cost_per_mile["cost_per_mile"] > 0:
+                console.print(f"[bold]Cost per Mile:[/bold] ${cost_per_mile['cost_per_mile']:.2f}")
+
+            # Breakdown by service type
+            if car_costs["by_type"]:
+                console.print("\n[bold]Breakdown by Service Type:[/bold]\n")
+                table = Table()
+                table.add_column("Service Type", style="cyan")
+                table.add_column("Count", justify="right")
+                table.add_column("Total", justify="right", style="green")
+                table.add_column("Avg", justify="right")
+                table.add_column("Min", justify="right")
+                table.add_column("Max", justify="right")
+
+                for service_type, stats in sorted(car_costs["by_type"].items()):
+                    table.add_row(
+                        service_type.replace("_", " ").title(),
+                        str(stats["count"]),
+                        f"${stats['total']:,.2f}",
+                        f"${stats['average']:.2f}" if stats["average"] else "—",
+                        f"${stats['min']:.2f}" if stats["min"] else "—",
+                        f"${stats['max']:.2f}" if stats["max"] else "—",
+                    )
+
+                console.print(table)
+
+        else:
+            # All cars costs
+            costs = repo.get_maintenance_costs()
+
+            if not costs:
+                console.print("[yellow]No maintenance records with costs found[/yellow]")
+                repo.close()
+                return
+
+            console.print("\n[bold cyan]💰 Maintenance Costs by Car[/bold cyan]\n")
+
+            # Get all cars for display
+            cars = {car.id: car for car in repo.get_cars()}
+
+            total_all = 0
+            table = Table()
+            table.add_column("Car", style="cyan")
+            table.add_column("Total Cost", justify="right", style="green")
+            table.add_column("Services", justify="right")
+            table.add_column("Avg per Service", justify="right")
+
+            for car_id_val, car_costs in sorted(costs.items()):
+                car_name = cars[car_id_val].display_name() if car_id_val in cars else f"Car {car_id_val}"
+                avg_per_service = (
+                    car_costs["total"] / car_costs["count"] if car_costs["count"] > 0 else 0
+                )
+
+                table.add_row(
+                    car_name,
+                    f"${car_costs['total']:,.2f}",
+                    str(car_costs["count"]),
+                    f"${avg_per_service:.2f}",
+                )
+                total_all += car_costs["total"]
+
+            console.print(table)
+            console.print(f"\n[bold]Total Across All Cars:[/bold] ${total_all:,.2f}")
+
+    finally:
+        repo.close()
+
+
+@app.command()
+def cost_compare() -> None:
+    """Compare maintenance costs across all cars."""
+    repo = get_repository()
+
+    try:
+        cars = repo.get_cars()
+        if not cars:
+            console.print("[yellow]No cars in garage[/yellow]")
+            return
+
+        console.print("\n[bold cyan]📊 Cost Comparison[/bold cyan]\n")
+
+        # Calculate stats for each car
+        car_stats = []
+        for car in cars:
+            costs = repo.get_maintenance_costs(car.id)
+            cost_per_mile = repo.get_cost_per_mile(car.id)
+
+            if car.id in costs:
+                total_cost = costs[car.id]["total"]
+                service_count = costs[car.id]["count"]
+            else:
+                total_cost = 0
+                service_count = 0
+
+            car_stats.append(
+                {
+                    "car": car,
+                    "total_cost": total_cost,
+                    "service_count": service_count,
+                    "cost_per_mile": cost_per_mile["cost_per_mile"],
+                    "miles_driven": cost_per_mile["total_miles"],
+                    "avg_per_service": total_cost / service_count if service_count > 0 else 0,
+                }
+            )
+
+        # Sort by total cost (descending)
+        car_stats.sort(key=lambda x: x["total_cost"], reverse=True)
+
+        # Display comparison table
+        table = Table()
+        table.add_column("Car", style="cyan")
+        table.add_column("Total Cost", justify="right", style="green")
+        table.add_column("Services", justify="right")
+        table.add_column("Avg/Service", justify="right")
+        table.add_column("Cost/Mile", justify="right")
+        table.add_column("Miles", justify="right")
+
+        for stat in car_stats:
+            table.add_row(
+                stat["car"].display_name(),
+                f"${stat['total_cost']:,.2f}",
+                str(stat["service_count"]),
+                f"${stat['avg_per_service']:.2f}",
+                f"${stat['cost_per_mile']:.2f}" if stat["cost_per_mile"] > 0 else "—",
+                f"{stat['miles_driven']:,}" if stat["miles_driven"] > 0 else "—",
+            )
+
+        console.print(table)
+
+        # Calculate averages
+        total_cost_all = sum(s["total_cost"] for s in car_stats)
+        avg_cost_per_car = total_cost_all / len(car_stats) if car_stats else 0
+        avg_cost_per_service = sum(
+            s["total_cost"] for s in car_stats
+        ) / sum(s["service_count"] for s in car_stats if s["service_count"] > 0) if sum(
+            s["service_count"] for s in car_stats
+        ) > 0 else 0
+
+        console.print(f"\n[bold]Averages:[/bold]")
+        console.print(f"  Cost per car: ${avg_cost_per_car:,.2f}")
+        console.print(f"  Cost per service: ${avg_cost_per_service:.2f}")
+
+    finally:
+        repo.close()
+
+
 # Phase 4: LLM-powered features
 @app.command()
 def summary(car_id: int | None = None) -> None:

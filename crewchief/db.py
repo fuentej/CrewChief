@@ -507,6 +507,132 @@ class GarageRepository:
         conn.commit()
         return True
 
+    def get_maintenance_costs(self, car_id: int | None = None) -> dict:
+        """Get maintenance cost analysis.
+
+        Args:
+            car_id: If provided, analyze costs for specific car. Otherwise, analyze all cars.
+
+        Returns:
+            Dictionary with cost breakdown by car and service type.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        if car_id is not None:
+            # Single car costs
+            cursor.execute(
+                """
+                SELECT
+                    car_id,
+                    service_type,
+                    COUNT(*) as service_count,
+                    SUM(cost) as total_cost,
+                    AVG(cost) as avg_cost,
+                    MAX(cost) as max_cost,
+                    MIN(cost) as min_cost
+                FROM maintenance_events
+                WHERE car_id = ? AND cost IS NOT NULL
+                GROUP BY car_id, service_type
+                ORDER BY service_type
+                """,
+                (car_id,),
+            )
+        else:
+            # All cars costs
+            cursor.execute(
+                """
+                SELECT
+                    car_id,
+                    service_type,
+                    COUNT(*) as service_count,
+                    SUM(cost) as total_cost,
+                    AVG(cost) as avg_cost,
+                    MAX(cost) as max_cost,
+                    MIN(cost) as min_cost
+                FROM maintenance_events
+                WHERE cost IS NOT NULL
+                GROUP BY car_id, service_type
+                ORDER BY car_id, service_type
+                """
+            )
+
+        rows = cursor.fetchall()
+
+        # Organize results by car
+        costs_by_car = {}
+        for row in rows:
+            car_id_val = row["car_id"]
+            if car_id_val not in costs_by_car:
+                costs_by_car[car_id_val] = {
+                    "total": 0,
+                    "count": 0,
+                    "by_type": {},
+                }
+
+            service_type = row["service_type"]
+            total = row["total_cost"] or 0
+            count = row["service_count"] or 0
+
+            costs_by_car[car_id_val]["by_type"][service_type] = {
+                "count": count,
+                "total": total,
+                "average": row["avg_cost"],
+                "max": row["max_cost"],
+                "min": row["min_cost"],
+            }
+            costs_by_car[car_id_val]["total"] += total
+            costs_by_car[car_id_val]["count"] += count
+
+        return costs_by_car
+
+    def get_cost_per_mile(self, car_id: int) -> dict:
+        """Calculate cost per mile for a specific car.
+
+        Returns:
+            Dictionary with total cost, total miles, and cost per mile.
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Get car's current odometer
+        cursor.execute(
+            "SELECT current_odometer FROM cars WHERE id = ?",
+            (car_id,),
+        )
+        car_row = cursor.fetchone()
+        if car_row is None or car_row["current_odometer"] is None:
+            return {"total_cost": 0, "total_miles": 0, "cost_per_mile": 0}
+
+        current_odometer = car_row["current_odometer"]
+
+        # Get total maintenance costs
+        cursor.execute(
+            "SELECT SUM(cost) as total FROM maintenance_events WHERE car_id = ? AND cost IS NOT NULL",
+            (car_id,),
+        )
+        cost_row = cursor.fetchone()
+        total_cost = cost_row["total"] or 0
+
+        # Estimate starting odometer (use first service or assume 0)
+        cursor.execute(
+            """
+            SELECT MIN(odometer) as min_odometer FROM maintenance_events
+            WHERE car_id = ? AND odometer IS NOT NULL
+            """,
+            (car_id,),
+        )
+        odometer_row = cursor.fetchone()
+        min_odometer = odometer_row["min_odometer"] if odometer_row and odometer_row["min_odometer"] else 0
+
+        total_miles = current_odometer - min_odometer
+
+        return {
+            "total_cost": total_cost,
+            "total_miles": total_miles,
+            "cost_per_mile": total_cost / total_miles if total_miles > 0 else 0,
+        }
+
     def _row_to_car(self, row: sqlite3.Row) -> Car:
         """Convert a database row to a Car model."""
         return Car(
