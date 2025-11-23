@@ -662,4 +662,37 @@ def generate_track_prep_checklist(
     if not isinstance(response, TrackPrepChecklist):
         raise LLMResponseError("Expected TrackPrepChecklist response")
 
+    # If critical_items or recommended_items are empty, request them individually
+    # This handles cases where truncation removed entire fields
+    if not response.critical_items:
+        critical_prompt = f"""For the {car.display_name()}, generate ONLY a JSON array of critical safety items to check before track use.
+Vehicle: {json.dumps(vehicle_data)}
+Maintenance history: {json.dumps(maintenance_data)}
+
+Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
+        critical_response = llm_chat(system_prompt, critical_prompt)
+        try:
+            import re
+            json_match = re.search(r'\[.*\]', critical_response, re.DOTALL)
+            if json_match:
+                response.critical_items = json.loads(json_match.group())
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
+    if not response.recommended_items:
+        recommended_prompt = f"""For the {car.display_name()}, generate ONLY a JSON array of recommended maintenance items for track prep.
+Vehicle: {json.dumps(vehicle_data)}
+Maintenance history: {json.dumps(maintenance_data)}
+
+Respond with ONLY a JSON array of strings, no other text. Example: ["item1", "item2"]"""
+        recommended_response = llm_chat(system_prompt, recommended_prompt)
+        try:
+            import re
+            json_match = re.search(r'\[.*\]', recommended_response, re.DOTALL)
+            if json_match:
+                response.recommended_items = json.loads(json_match.group())
+        except (json.JSONDecodeError, AttributeError):
+            # If we still can't get it, use empty list (better than failing)
+            response.recommended_items = []
+
     return response
