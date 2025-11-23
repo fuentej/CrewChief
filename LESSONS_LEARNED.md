@@ -186,7 +186,7 @@ For CrewChief's `track-prep`, we use both approaches:
 This hybrid approach gives us both speed and reliability.
 
 ## Conclusion
-Integrating with external LLM services requires defensive programming. Responses may be incomplete, malformed, or wrapped in unexpected formatting. A robust solution layers multiple recovery strategies:
+Integrating with Azure AI Foundry local services requires defensive programming. Responses may be incomplete, malformed, or wrapped in unexpected formatting. A robust solution layers multiple recovery strategies:
 1. Try to parse responses as-is
 2. Repair truncated/malformed JSON
 3. Fill missing fields with defaults
