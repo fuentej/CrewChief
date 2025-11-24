@@ -604,19 +604,64 @@ def log_service(
         if not description:
             description = None
 
-    if parts is None:
-        parts = typer.prompt("Parts used (optional)", default="", show_default=False)
-        if not parts:
-            parts = None
+    # Parts selection and cost tracking
+    parts_list = []
+    total_cost = 0.0 if cost is None else cost
+    new_parts_added = []
 
-    if cost is None:
-        cost_input = typer.prompt("Cost (optional)", default="", show_default=False)
-        if cost_input.strip():
+    # Get car parts for selection
+    car_parts = repo.get_car_parts(car_id) if car_parts is None else car_parts
+
+    if car_parts and typer.confirm("Add parts from profile?", default=False):
+        console.print("\n[cyan]Parts in profile:[/cyan]")
+        for idx, part in enumerate(car_parts, 1):
+            part_str = f"{idx}. {part.part_category.value.replace('_', ' ').title()}"
+            if part.brand:
+                part_str += f": {part.brand}"
+            if part.part_number:
+                part_str += f" ({part.part_number})"
+            console.print(part_str)
+
+        # Get part selections
+        selections_input = typer.prompt("\nSelect parts (numbers separated by spaces, or press Enter to skip)", default="", show_default=False)
+
+        if selections_input.strip():
             try:
-                cost = float(cost_input)
+                selections = [int(x) for x in selections_input.split()]
+                for idx in selections:
+                    if 1 <= idx <= len(car_parts):
+                        part = car_parts[idx - 1]
+                        part_cost_input = typer.prompt(f"Cost for {part.brand or part.part_category.value}: ", type=float)
+                        parts_list.append(f"{part.brand or part.part_category.value}")
+                        total_cost += part_cost_input
+                        console.print(f"[dim]Running total: ${total_cost:.2f}[/dim]")
             except ValueError:
-                console.print("[yellow]Warning:[/yellow] Invalid cost format, skipping")
-                cost = None
+                console.print("[yellow]Warning:[/yellow] Invalid selection format")
+
+    # Allow adding custom parts not in profile
+    while True:
+        add_custom = typer.confirm("Add another part (custom)?", default=False)
+        if not add_custom:
+            break
+
+        part_name = typer.prompt("Part name")
+        part_cost = typer.prompt("Cost", type=float)
+        parts_list.append(part_name)
+        total_cost += part_cost
+        new_parts_added.append(part_name)
+        console.print(f"[dim]Running total: ${total_cost:.2f}[/dim]")
+
+    # Labor cost
+    if parts is None and typer.confirm("Add labor cost?", default=False):
+        labor_cost = typer.prompt("Labor cost", type=float)
+        total_cost += labor_cost
+        console.print(f"[dim]Running total: ${total_cost:.2f}[/dim]")
+
+    # Set final values
+    if parts_list:
+        parts = ", ".join(parts_list)
+    if total_cost > 0:
+        cost = total_cost
 
     if location is None:
         location = typer.prompt("Location/shop (optional)", default="", show_default=False)
@@ -641,9 +686,30 @@ def log_service(
     # Update interval tracking if configured
     repo.update_interval_after_service(car_id, service_type_enum, service_date_obj, odometer)
 
+    # Save new parts that were added during service logging
+    for part_name in new_parts_added:
+        # Infer category from service type
+        category = PartCategory.OTHER
+        if service_type_enum == ServiceType.OIL_CHANGE:
+            category = PartCategory.OIL
+        elif service_type_enum == ServiceType.BRAKES:
+            category = PartCategory.BRAKE_PADS
+        elif service_type_enum == ServiceType.TIRES:
+            category = PartCategory.TIRES
+
+        new_part = CarPart(
+            car_id=car_id,
+            part_category=category,
+            notes=part_name
+        )
+        repo.add_car_part(new_part)
+
     repo.close()
 
     console.print(f"\n[green]✓[/green] Service logged successfully! [dim](ID: {event.id})[/dim]")
+    if new_parts_added:
+        console.print(f"[green]✓[/green] Added {len(new_parts_added)} new parts to profile")
+        console.print("[dim]Tip: Add details with 'crewchief update-part <id>'[/dim]")
 
 
 @app.command()
