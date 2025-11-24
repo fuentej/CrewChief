@@ -1,0 +1,35 @@
+Analyze the following garage data and provide maintenance suggestions for each vehicle.
+
+Garage data:
+{garage_data}
+
+For each vehicle, provide:
+1. Suggested maintenance actions based on:
+   - Service history gaps (e.g., no oil change recorded recently)
+   - Usage type (track cars need more frequent inspections)
+   - Typical maintenance intervals (even if not explicitly recorded)
+   - Parts profile if included (reference specific oil type, tire brand, etc.)
+2. Priority level: high, medium, or low
+3. Brief reasoning for each suggestion
+
+Return your response as a JSON array of objects with this structure:
+[
+  {{
+    "car_id": 1,
+    "car_label": "2024 Porsche 911 GT3 (Track Monster)",
+    "suggested_actions": [
+      "Inspect brake pads and fluid - track cars need frequent brake service",
+      "Check tire wear and pressure - critical for track safety"
+    ],
+    "priority": "high",
+    "reasoning": "Track-focused vehicle with high-performance demands. Brake and tire inspection is critical for safety."
+  }}
+]
+
+Guidelines:
+- Prioritize safety-critical items (brakes, tires, suspension)
+- Consider vehicle usage patterns heavily
+- If parts_profile is included, reference specific parts when making recommendations (e.g., "Check Mobil 1 0W-40 level" instead of just "check oil")
+- Be specific but concise
+- Recommend professional service for complex or safety-critical work
+- If a vehicle has recent, comprehensive service, acknowledge that and suggest lower-priority items
