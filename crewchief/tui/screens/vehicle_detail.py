@@ -13,6 +13,7 @@ from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.screens.maintenance_log import MaintenanceLogScreen
 from crewchief.tui.screens.parts_manager import PartsManagerScreen
 from crewchief.tui.screens.costs_view import CostsViewScreen
+from crewchief.tui.screens.ai_panel import AIPanelScreen
 
 
 class VehicleDetailScreen(Screen):
@@ -116,6 +117,7 @@ class VehicleDetailScreen(Screen):
         Binding("l", "view_log", "View Log"),
         Binding("p", "view_parts", "Parts"),
         Binding("c", "view_costs", "Costs"),
+        Binding("a", "view_ai", "AI Insights"),
         Binding("enter", "view_event", "View"),
         Binding("?", "help", "Help"),
     ]
@@ -158,7 +160,7 @@ class VehicleDetailScreen(Screen):
         yield Static("", id="event-detail")
 
         yield HelpFooter(
-            help_text=" [↑↓]Select  [L]og  [P]arts  [C]osts  [Enter]View  [Esc]Back  [?]Help",
+            help_text=" [↑↓]Select  [L]og  [P]arts  [C]osts  [A]I  [Enter]View  [Esc]Back",
             id="help-footer",
         )
 
@@ -229,6 +231,10 @@ class VehicleDetailScreen(Screen):
     def action_view_costs(self) -> None:
         """Open cost analytics for this vehicle."""
         self.app.push_screen(CostsViewScreen(car_id=self.car_id))
+
+    def action_view_ai(self) -> None:
+        """Open AI insights for this vehicle."""
+        self.app.push_screen(AIPanelScreen(car_id=self.car_id))
 
     def action_view_event(self) -> None:
         """View selected event details."""

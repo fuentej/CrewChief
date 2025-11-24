@@ -12,6 +12,7 @@ from crewchief.tui.widgets.help_footer import HelpFooter
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.vehicle_detail import VehicleDetailScreen
 from crewchief.tui.screens.costs_view import CostsViewScreen
+from crewchief.tui.screens.ai_panel import AIPanelScreen
 
 
 class DashboardScreen(Screen):
@@ -102,6 +103,7 @@ class DashboardScreen(Screen):
         Binding("?", "help", "Help"),
         Binding("v", "view_vehicle", "View Vehicle"),
         Binding("c", "view_costs", "Costs"),
+        Binding("a", "view_ai", "AI Insights"),
     ]
 
     def __init__(self, **kwargs):
@@ -132,7 +134,7 @@ class DashboardScreen(Screen):
                     yield Static(id="recent-events")
 
         yield HelpFooter(
-            help_text=" [V]iew Vehicle  [C]osts  [?]Help  [Q]uit",
+            help_text=" [V]iew Vehicle  [C]osts  [A]I Insights  [?]Help  [Q]uit",
             id="help-footer",
         )
 
@@ -187,6 +189,10 @@ class DashboardScreen(Screen):
     def action_view_costs(self) -> None:
         """View cost analytics for all vehicles."""
         self.app.push_screen(CostsViewScreen())
+
+    def action_view_ai(self) -> None:
+        """View AI insights for the garage."""
+        self.app.push_screen(AIPanelScreen())
 
     def action_help(self) -> None:
         """Show help overlay."""
