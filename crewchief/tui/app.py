@@ -5,11 +5,10 @@ Entry point: crewchief-tui
 
 from textual.app import ComposeResult, App
 from textual.binding import Binding
-from textual.containers import Container, Vertical
-from textual.widgets import Static, Header, Footer
+from textual.message import Message
 
 from crewchief.tui.theme import THEME_CSS
-from crewchief.tui.widgets import ASCIIBanner
+from crewchief.tui.screens.dashboard import DashboardScreen
 
 
 class CrewChiefTUI(App):
@@ -18,38 +17,25 @@ class CrewChiefTUI(App):
     TITLE = "CrewChief - Garage Management"
     SUB_TITLE = "Local-first maintenance tracking"
 
-    CSS = THEME_CSS + """
-    Screen {
-        layout: vertical;
-    }
-
-    #banner {
-        width: 100%;
-        height: auto;
-    }
-
-    #content {
-        width: 100%;
-        height: 1fr;
-    }
-    """
+    CSS = THEME_CSS
 
     BINDINGS = [
         Binding("q", "quit", "Quit", show=True),
         Binding("?", "help", "Help", show=True),
     ]
 
-    def compose(self) -> ComposeResult:
-        """Create child widgets for the app."""
-        yield Header()
-        yield ASCIIBanner(id="banner")
-        yield Static("TUI screens will go here", id="content")
-        yield Footer()
+    class VehicleSelected(Message):
+        """Posted when user selects a vehicle."""
+
+        def __init__(self, car_id: int) -> None:
+            super().__init__()
+            self.car_id = car_id
 
     def on_mount(self) -> None:
-        """App startup."""
+        """App startup - push dashboard screen."""
         self.title = self.TITLE
         self.sub_title = self.SUB_TITLE
+        self.push_screen(DashboardScreen())
 
 
 def run() -> None:
