@@ -604,6 +604,25 @@ def log_service(
         if not description:
             description = None
 
+    if parts is None:
+        parts = typer.prompt("Parts used (optional)", default="", show_default=False)
+        if not parts:
+            parts = None
+
+    if cost is None:
+        cost_input = typer.prompt("Cost (optional)", default="", show_default=False)
+        if cost_input.strip():
+            try:
+                cost = float(cost_input)
+            except ValueError:
+                console.print("[yellow]Warning:[/yellow] Invalid cost format, skipping")
+                cost = None
+
+    if location is None:
+        location = typer.prompt("Location/shop (optional)", default="", show_default=False)
+        if not location:
+            location = None
+
     # Create event
     event = MaintenanceEvent(
         car_id=car_id,
