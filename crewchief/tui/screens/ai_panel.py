@@ -225,8 +225,8 @@ class AIPanelScreen(Screen):
         self.load_ai_data()
 
     def action_help(self) -> None:
-        """Show help overlay."""
-        pass
+        """Show help screen."""
+        self.app.action_help()
 
     def on_unmount(self) -> None:
         """Clean up when leaving screen."""

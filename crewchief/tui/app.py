@@ -9,6 +9,7 @@ from textual.message import Message
 
 from crewchief.tui.theme import THEME_CSS
 from crewchief.tui.screens.dashboard import DashboardScreen
+from crewchief.tui.screens.help_screen import HelpScreen
 
 
 class CrewChiefTUI(App):
@@ -36,6 +37,10 @@ class CrewChiefTUI(App):
         self.title = self.TITLE
         self.sub_title = self.SUB_TITLE
         self.push_screen(DashboardScreen())
+
+    def action_help(self) -> None:
+        """Show help screen."""
+        self.push_screen(HelpScreen())
 
 
 def run() -> None:

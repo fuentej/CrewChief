@@ -252,8 +252,8 @@ class VehicleDetailScreen(Screen):
                 detail.update(detail_text)
 
     def action_help(self) -> None:
-        """Show help overlay."""
-        pass
+        """Show help screen."""
+        self.app.action_help()
 
     def on_unmount(self) -> None:
         """Clean up when leaving screen."""

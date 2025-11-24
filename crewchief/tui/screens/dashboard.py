@@ -195,9 +195,8 @@ class DashboardScreen(Screen):
         self.app.push_screen(AIPanelScreen())
 
     def action_help(self) -> None:
-        """Show help overlay."""
-        # Placeholder - implement help modal in later phase
-        pass
+        """Show help screen."""
+        self.app.action_help()
 
     def on_unmount(self) -> None:
         """Clean up when leaving screen."""

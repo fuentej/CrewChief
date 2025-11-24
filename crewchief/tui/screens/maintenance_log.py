@@ -162,8 +162,8 @@ class MaintenanceLogScreen(Screen):
                 self.notify(f"Delete entry {event.id} - coming soon", timeout=3)
 
     def action_help(self) -> None:
-        """Show help overlay."""
-        pass
+        """Show help screen."""
+        self.app.action_help()
 
     def on_unmount(self) -> None:
         """Clean up when leaving screen."""
