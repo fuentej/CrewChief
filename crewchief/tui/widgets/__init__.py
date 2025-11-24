@@ -6,5 +6,6 @@ from crewchief.tui.widgets.status_badge import StatusBadge
 from crewchief.tui.widgets.stats_panel import StatsPanel
 from crewchief.tui.widgets.vehicle_table import VehicleTable
 from crewchief.tui.widgets.maintenance_table import MaintenanceTable
+from crewchief.tui.widgets.parts_table import PartsTable
 
-__all__ = ["ASCIIBanner", "HelpFooter", "StatusBadge", "StatsPanel", "VehicleTable", "MaintenanceTable"]
+__all__ = ["ASCIIBanner", "HelpFooter", "StatusBadge", "StatsPanel", "VehicleTable", "MaintenanceTable", "PartsTable"]

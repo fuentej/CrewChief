@@ -11,6 +11,7 @@ from crewchief.tui.widgets.help_footer import HelpFooter
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.screens.maintenance_log import MaintenanceLogScreen
+from crewchief.tui.screens.parts_manager import PartsManagerScreen
 
 
 class VehicleDetailScreen(Screen):
@@ -112,6 +113,7 @@ class VehicleDetailScreen(Screen):
     BINDINGS = [
         Binding("escape", "back", "Back"),
         Binding("l", "view_log", "View Log"),
+        Binding("p", "view_parts", "Parts"),
         Binding("enter", "view_event", "View"),
         Binding("?", "help", "Help"),
     ]
@@ -154,7 +156,7 @@ class VehicleDetailScreen(Screen):
         yield Static("", id="event-detail")
 
         yield HelpFooter(
-            help_text=" [↑↓]Select  [L]og  [Enter]View  [Esc]Back  [?]Help",
+            help_text=" [↑↓]Select  [L]og  [P]arts  [Enter]View  [Esc]Back  [?]Help",
             id="help-footer",
         )
 
@@ -217,6 +219,10 @@ class VehicleDetailScreen(Screen):
     def action_view_log(self) -> None:
         """Open full maintenance log for this vehicle."""
         self.app.push_screen(MaintenanceLogScreen(car_id=self.car_id))
+
+    def action_view_parts(self) -> None:
+        """Open parts manager for this vehicle."""
+        self.app.push_screen(PartsManagerScreen(car_id=self.car_id))
 
     def action_view_event(self) -> None:
         """View selected event details."""
