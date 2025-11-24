@@ -400,27 +400,12 @@ Keep it conversational and concise - this will be combined with other vehicles."
     if not car_summaries:
         raise LLMResponseError("Failed to generate any car summaries for garage overview")
 
-    # Combine car summaries into a cohesive garage overview
-    combined_context = "\n\n".join(car_summaries)
+    # Combine all car summaries into final output
+    # Each car summary is already complete, so we just join them with a brief intro
     fleet_size = len(snapshot.cars)
+    intro = f"Your garage has {fleet_size} vehicle{'s' if fleet_size != 1 else ''}:\n\n"
 
-    final_prompt = f"""Here are individual summaries of each vehicle in the garage.
-Create a 3-4 sentence cohesive garage overview that ties these together and highlights the overall fleet health.
-
-Fleet summaries:
-{combined_context}
-
-Total vehicles: {fleet_size}
-
-Write a conversational overview of the entire garage."""
-
-    # Generate the final combined summary
-    final_response = llm_chat(system_prompt, final_prompt, temperature=0.7)
-
-    if not isinstance(final_response, str):
-        raise LLMResponseError("Expected string response for final garage summary")
-
-    return final_response
+    return intro + "\n\n".join(car_summaries)
 
 
 def generate_maintenance_suggestions(
