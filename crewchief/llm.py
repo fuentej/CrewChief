@@ -318,6 +318,9 @@ def llm_chat(
 def generate_garage_summary(snapshot: GarageSnapshot, parts: list | None = None) -> str:
     """Generate a natural language summary of the garage.
 
+    Uses per-car requests to avoid truncation issues with Foundry Local's
+    621-character limit. Combines multiple car summaries into a cohesive overview.
+
     Args:
         snapshot: Complete garage data (cars and maintenance events).
         parts: Optional list of CarPart objects to include in context.
@@ -328,60 +331,96 @@ def generate_garage_summary(snapshot: GarageSnapshot, parts: list | None = None)
     Raises:
         LLMError: If summary generation fails.
     """
-    # Load prompt templates
+    # Load prompt template
     system_prompt = _load_prompt_template("system_crewchief.txt")
-    user_template = _load_prompt_template("garage_summary.txt")
 
-    # Build garage data context
-    garage_data = {
-        "total_cars": len(snapshot.cars),
-        "cars": [
+    # Generate summary for each car individually, then combine
+    car_summaries = []
+
+    for car in snapshot.cars:
+        # Filter maintenance events for this car only
+        car_events = [e for e in snapshot.maintenance_events if e.car_id == car.id]
+
+        # Filter parts for this car only
+        car_parts_filtered = [p for p in parts if p.car_id == car.id] if parts else []
+
+        # Build context for this specific car
+        car_data = {
+            "display_name": car.display_name(),
+            "usage_type": car.usage_type.value,
+            "current_odometer": car.current_odometer,
+            "notes": car.notes,
+        }
+
+        maintenance_data = [
             {
-                "id": car.id,
-                "display_name": car.display_name(),
-                "usage_type": car.usage_type.value,
-                "current_odometer": car.current_odometer,
-                "notes": car.notes,
-            }
-            for car in snapshot.cars
-        ],
-        "maintenance_events": [
-            {
-                "car_id": event.car_id,
                 "service_date": event.service_date.isoformat(),
                 "service_type": event.service_type.value,
                 "description": event.description,
                 "odometer": event.odometer,
             }
-            for event in snapshot.maintenance_events
-        ],
-    }
+            for event in car_events
+        ]
 
-    # Add parts profile if available
-    if parts:
-        garage_data["parts_profile"] = [
+        parts_data = [
             {
-                "car_id": part.car_id,
                 "category": part.part_category.value,
                 "brand": part.brand,
                 "part_number": part.part_number,
                 "size_spec": part.size_spec,
             }
-            for part in parts
+            for part in car_parts_filtered
         ]
 
-    # Format the user prompt with data
-    user_prompt = user_template.format(
-        garage_data=json.dumps(garage_data, indent=2)
-    )
+        # Create a focused prompt for this single car
+        user_prompt = f"""Write a brief 2-3 sentence summary of this vehicle's status and maintenance.
 
-    # Call LLM with higher temperature for more natural, conversational text
-    response = llm_chat(system_prompt, user_prompt, temperature=0.7)
+Vehicle: {json.dumps(car_data, indent=2)}
+Maintenance history: {json.dumps(maintenance_data, indent=2)}
+Parts profile: {json.dumps(parts_data, indent=2)}
 
-    if not isinstance(response, str):
-        raise LLMResponseError("Expected string response for garage summary")
+Focus on:
+- Current state (age, usage type, odometer)
+- Maintenance trends (is it well-maintained?)
+- Any notable observations from history
 
-    return response
+Keep it conversational and concise - this will be combined with other vehicles."""
+
+        try:
+            # Request summary for this car
+            response = llm_chat(system_prompt, user_prompt, temperature=0.7)
+
+            if isinstance(response, str):
+                car_summaries.append(response.strip())
+        except LLMError as e:
+            # If we can't get a summary for this car, add a fallback
+            fallback = f"{car.display_name()} - {car.usage_type.value.title()} with {len(car_events)} maintenance records"
+            car_summaries.append(fallback)
+
+    if not car_summaries:
+        raise LLMResponseError("Failed to generate any car summaries for garage overview")
+
+    # Combine car summaries into a cohesive garage overview
+    combined_context = "\n\n".join(car_summaries)
+    fleet_size = len(snapshot.cars)
+
+    final_prompt = f"""Here are individual summaries of each vehicle in the garage.
+Create a 3-4 sentence cohesive garage overview that ties these together and highlights the overall fleet health.
+
+Fleet summaries:
+{combined_context}
+
+Total vehicles: {fleet_size}
+
+Write a conversational overview of the entire garage."""
+
+    # Generate the final combined summary
+    final_response = llm_chat(system_prompt, final_prompt, temperature=0.7)
+
+    if not isinstance(final_response, str):
+        raise LLMResponseError("Expected string response for final garage summary")
+
+    return final_response
 
 
 def generate_maintenance_suggestions(
