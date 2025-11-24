@@ -553,8 +553,22 @@ def log_service(
 
     # Parse or prompt for date
     if service_date is None:
-        service_date_obj = date.today()
-        console.print(f"Service date: {service_date_obj} [dim](today)[/dim]")
+        # Prompt for date with option to use today
+        date_input = typer.prompt(
+            "Service date (YYYY-MM-DD, or press Enter for today)",
+            default="",
+            show_default=False
+        )
+        if date_input.strip():
+            try:
+                service_date_obj = date.fromisoformat(date_input)
+            except ValueError:
+                console.print(f"[red]Error:[/red] Invalid date format. Use YYYY-MM-DD (e.g., 2025-11-20)")
+                repo.close()
+                raise typer.Exit(code=1)
+        else:
+            service_date_obj = date.today()
+            console.print(f"Using today: {service_date_obj}")
     else:
         try:
             service_date_obj = date.fromisoformat(service_date)
