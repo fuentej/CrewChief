@@ -5,10 +5,13 @@ from textual.containers import Container, Vertical
 from textual.widgets import Static, Label
 from textual.binding import Binding
 
+from crewchief.models import CarPart
 from crewchief.tui.widgets.parts_table import PartsTable
 from crewchief.tui.widgets.help_footer import HelpFooter
 from crewchief.tui.services.parts_service import PartsService
 from crewchief.tui.services.garage_service import GarageService
+from crewchief.tui.screens.parts_form import PartsFormModal
+from crewchief.tui.screens.modals import ConfirmDeleteModal
 
 
 class PartsManagerScreen(Screen):
@@ -144,22 +147,65 @@ class PartsManagerScreen(Screen):
 
     def action_new_part(self) -> None:
         """Add a new part to the profile."""
-        # Placeholder - form modal coming in extended phase
-        self.notify("New part form - coming soon", timeout=3)
+        def handle_form_result(form_data: dict) -> None:
+            """Handle form submission."""
+            if form_data:
+                try:
+                    part = CarPart(**form_data)
+                    result = self.parts_service.add_part(part)
+                    self.notify("Part added to profile", timeout=2)
+                    self.load_parts_data()
+                except Exception as e:
+                    self.notify(f"Error adding part: {str(e)}", timeout=3)
+
+        self.app.push_screen(
+            PartsFormModal(self.car_id),
+            callback=handle_form_result,
+        )
 
     def action_edit_part(self) -> None:
         """Edit selected part."""
         if self.parts_table:
             part = self.parts_table.get_selected_part()
             if part:
-                self.notify(f"Edit part {part.id} - coming soon", timeout=3)
+                def handle_form_result(form_data: dict) -> None:
+                    """Handle form submission."""
+                    if form_data:
+                        try:
+                            part_id = form_data.pop("id")
+                            self.parts_service.update_part(part_id, **form_data)
+                            self.notify("Part updated", timeout=2)
+                            self.load_parts_data()
+                        except Exception as e:
+                            self.notify(f"Error updating part: {str(e)}", timeout=3)
+
+                self.app.push_screen(
+                    PartsFormModal(self.car_id, part),
+                    callback=handle_form_result,
+                )
 
     def action_delete_part(self) -> None:
         """Delete selected part."""
         if self.parts_table:
             part = self.parts_table.get_selected_part()
             if part:
-                self.notify(f"Delete part {part.id} - coming soon", timeout=3)
+                def handle_confirm(confirmed: bool) -> None:
+                    """Handle delete confirmation."""
+                    if confirmed:
+                        try:
+                            self.parts_service.delete_part(part.id)
+                            self.notify("Part deleted", timeout=2)
+                            self.load_parts_data()
+                        except Exception as e:
+                            self.notify(f"Error deleting part: {str(e)}", timeout=3)
+
+                self.app.push_screen(
+                    ConfirmDeleteModal(
+                        "Delete Part",
+                        f"Delete {part.brand or part.part_category.value} part?\nThis cannot be undone.",
+                    ),
+                    callback=handle_confirm,
+                )
 
     def action_help(self) -> None:
         """Show help screen."""

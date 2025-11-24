@@ -5,10 +5,13 @@ from textual.containers import Container, Vertical
 from textual.widgets import Static, Label, Button
 from textual.binding import Binding
 
+from crewchief.models import MaintenanceEvent
 from crewchief.tui.widgets.maintenance_table import MaintenanceTable
 from crewchief.tui.widgets.help_footer import HelpFooter
 from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.services.garage_service import GarageService
+from crewchief.tui.screens.maintenance_form import MaintenanceEventFormModal
+from crewchief.tui.screens.modals import ConfirmDeleteModal
 
 
 class MaintenanceLogScreen(Screen):
@@ -144,22 +147,65 @@ class MaintenanceLogScreen(Screen):
 
     def action_new_entry(self) -> None:
         """Create a new maintenance entry."""
-        # Placeholder - modal form will be implemented in extended phase
-        self.notify("New entry form - coming soon", timeout=3)
+        def handle_form_result(form_data: dict) -> None:
+            """Handle form submission."""
+            if form_data:
+                try:
+                    event = MaintenanceEvent(**form_data)
+                    result = self.maintenance_service.add_event(event)
+                    self.notify("Maintenance entry added", timeout=2)
+                    self.load_maintenance_data()
+                except Exception as e:
+                    self.notify(f"Error adding entry: {str(e)}", timeout=3)
+
+        self.app.push_screen(
+            MaintenanceEventFormModal(self.car_id),
+            callback=handle_form_result,
+        )
 
     def action_edit_entry(self) -> None:
         """Edit selected maintenance entry."""
         if self.maintenance_table:
             event = self.maintenance_table.get_selected_event()
             if event:
-                self.notify(f"Edit entry {event.id} - coming soon", timeout=3)
+                def handle_form_result(form_data: dict) -> None:
+                    """Handle form submission."""
+                    if form_data:
+                        try:
+                            event_id = form_data.pop("id")
+                            self.maintenance_service.update_event(event_id, **form_data)
+                            self.notify("Maintenance entry updated", timeout=2)
+                            self.load_maintenance_data()
+                        except Exception as e:
+                            self.notify(f"Error updating entry: {str(e)}", timeout=3)
+
+                self.app.push_screen(
+                    MaintenanceEventFormModal(self.car_id, event),
+                    callback=handle_form_result,
+                )
 
     def action_delete_entry(self) -> None:
         """Delete selected maintenance entry."""
         if self.maintenance_table:
             event = self.maintenance_table.get_selected_event()
             if event:
-                self.notify(f"Delete entry {event.id} - coming soon", timeout=3)
+                def handle_confirm(confirmed: bool) -> None:
+                    """Handle delete confirmation."""
+                    if confirmed:
+                        try:
+                            self.maintenance_service.delete_event(event.id)
+                            self.notify("Maintenance entry deleted", timeout=2)
+                            self.load_maintenance_data()
+                        except Exception as e:
+                            self.notify(f"Error deleting entry: {str(e)}", timeout=3)
+
+                self.app.push_screen(
+                    ConfirmDeleteModal(
+                        "Delete Maintenance Entry",
+                        f"Delete maintenance entry from {event.service_date}?\nThis cannot be undone.",
+                    ),
+                    callback=handle_confirm,
+                )
 
     def action_help(self) -> None:
         """Show help screen."""
