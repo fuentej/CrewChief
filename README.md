@@ -127,19 +127,47 @@ crewchief add-car \
 
 ### Logging Maintenance
 
-Track all service work:
+Track all service work with integrated parts and cost tracking:
 ```bash
 $ crewchief log-service 1
-Enter service date (YYYY-MM-DD): 2024-03-15
-Select service type [oil_change/brakes/tires/fluids/inspection/mod/other]: brakes
-Enter odometer reading (optional): 15200
-Enter description (optional): Replaced front brake pads and rotors
-Enter parts used (optional): Hawk DTC-60 pads, Girodisc rotors
-Enter cost (optional): 1850.00
-Enter service location (optional): Track Day Motorsports
+Service type: brakes
+Service date (YYYY-MM-DD, or press Enter for today): 2024-03-15
+Description (optional): Replaced front brake pads and rotors
 
-✓ Maintenance logged for 2024 Porsche 911 GT3
+Add parts from profile? [y/N]: y
+
+Parts in profile:
+  1. Brake Pads: Hawk DTC-60
+  2. Brake Fluid: Motul RBF 660
+
+Select parts (numbers separated by spaces): 1 2
+Cost for Hawk DTC-60: 125.00
+Running total: $125.00
+Cost for Motul RBF 660: 35.00
+Running total: $160.00
+
+Add another part (custom)? [y/N]: y
+Part name: brake rotors
+Cost: 250.00
+Running total: $410.00
+
+Add another part (custom)? [y/N]: n
+Add labor cost? [y/N]: y
+Labor cost: 200.00
+Running total: $610.00
+
+Location/shop (optional): Track Day Motorsports
+
+✓ Service logged successfully! (ID: 42)
+✓ Added 1 new parts to profile
 ```
+
+**Key features:**
+- Select multiple parts from your profile by number
+- Enter cost for each part with running total
+- Add custom parts not in profile (saved automatically)
+- Add labor costs separately
+- All costs tracked in service log for cost analysis
 
 ### Viewing Maintenance History
 
