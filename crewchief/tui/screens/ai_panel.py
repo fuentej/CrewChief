@@ -135,7 +135,7 @@ class AIPanelScreen(Screen):
             section: The widget to display summary in.
         """
         try:
-            section.update(Static("⟳ Generating garage summary...", classes="ai-loading").render())
+            section.update("⟳ Generating garage summary...")
 
             summary = self.ai_service.get_garage_summary(self.car_id)
 
@@ -143,10 +143,10 @@ class AIPanelScreen(Screen):
                 content = f"[ GARAGE SUMMARY ]\n\n{summary}"
                 section.update(content)
             else:
-                section.update("[ ERROR ] Failed to generate summary", classes="ai-error")
+                section.update("[ ERROR ] Failed to generate summary")
 
         except Exception as e:
-            section.update(f"[ ERROR ] {str(e)}", classes="ai-error")
+            section.update(f"[ ERROR ] {str(e)}")
 
     def _load_maintenance_suggestions(self, section: Static) -> None:
         """Load and display maintenance suggestions.
