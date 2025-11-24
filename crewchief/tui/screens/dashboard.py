@@ -10,6 +10,7 @@ from crewchief.tui.widgets.vehicle_table import VehicleTable
 from crewchief.tui.widgets.stats_panel import StatsPanel
 from crewchief.tui.widgets.help_footer import HelpFooter
 from crewchief.tui.services.garage_service import GarageService
+from crewchief.tui.screens.vehicle_detail import VehicleDetailScreen
 
 
 class DashboardScreen(Screen):
@@ -179,7 +180,7 @@ class DashboardScreen(Screen):
         if self.vehicle_table:
             car_id = self.vehicle_table.get_selected_car_id()
             if car_id:
-                self.app.post_message(self.app.VehicleSelected(car_id=car_id))
+                self.app.push_screen(VehicleDetailScreen(car_id=car_id))
 
     def action_help(self) -> None:
         """Show help overlay."""
