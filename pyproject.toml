@@ -27,6 +27,7 @@ dependencies = [
     "httpx>=0.24",
     "rich>=13.0",
     "requests>=2.31",
+    "textual>=0.47.0",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,7 @@ dev = [
 
 [project.scripts]
 crewchief = "crewchief.cli:app"
+crewchief-tui = "crewchief.tui.app:run"
 
 [tool.setuptools.packages.find]
 where = ["."]
