@@ -188,11 +188,16 @@ class MaintenanceLogScreen(Screen):
                     if form_data:
                         try:
                             event_id = form_data.pop("id")
-                            self.maintenance_service.update_event(event_id, **form_data)
-                            self.notify("Maintenance entry updated", timeout=2)
-                            self.load_maintenance_data()
+                            result = self.maintenance_service.update_event(event_id, **form_data)
+                            if result:
+                                self.notify("Maintenance entry updated", timeout=2)
+                                self.load_maintenance_data()
+                            else:
+                                self.notify("Failed to update entry", timeout=3)
                         except Exception as e:
+                            import traceback
                             self.notify(f"Error updating entry: {str(e)}", timeout=3)
+                            traceback.print_exc()
 
                 self.app.push_screen(
                     MaintenanceEventFormModal(self.car_id, event),

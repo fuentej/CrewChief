@@ -145,9 +145,8 @@ class MaintenanceEventFormModal(BaseFormModal):
             "description": self.form_data.get("description") or None,
         }
 
-        # Preserve ID if editing
+        # Preserve ID and created_at if editing (but don't update them)
         if self.event:
             event_data["id"] = self.event.id
-            event_data["created_at"] = self.event.created_at
 
         self.form_data = event_data
