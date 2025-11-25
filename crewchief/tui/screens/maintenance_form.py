@@ -139,9 +139,9 @@ class MaintenanceEventFormModal(BaseFormModal):
             "service_type": service_type,
             "odometer": odometer,
             "cost": cost,
-            "location": self.form_data.get("location") or None,
-            "parts": self.form_data.get("parts") or None,
-            "description": self.form_data.get("description") or None,
+            "location": self.form_data.get("location"),
+            "parts": self.form_data.get("parts"),
+            "description": self.form_data.get("description"),
         }
 
         # Preserve ID and created_at if editing (but don't update them)
