@@ -59,21 +59,21 @@ class MaintenanceEventFormModal(BaseFormModal):
                 "Location",
                 field_type="text",
                 required=False,
-                default=event.location or "",
+                default=event.location or "" if event else "",
             ),
             FormField(
                 "parts",
                 "Parts Used",
                 field_type="text",
                 required=False,
-                default=event.parts or "",
+                default=event.parts or "" if event else "",
             ),
             FormField(
                 "description",
                 "Description/Notes",
                 field_type="textarea",
                 required=False,
-                default=event.description or "",
+                default=event.description or "" if event else "",
             ),
         ]
 
