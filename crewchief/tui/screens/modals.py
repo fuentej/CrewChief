@@ -152,7 +152,7 @@ class BaseFormModal(ModalScreen):
 
                         if field.field_type == "select" and field.options:
                             select = Select(
-                                field.options,
+                                [(str(v), str(l)) for v, l in field.options],
                                 id=f"{field.name}",
                                 classes="form-select",
                             )
@@ -164,8 +164,6 @@ class BaseFormModal(ModalScreen):
                                 classes="form-textarea",
                                 multiline=True,
                             )
-                            if field.default:
-                                input_widget.value = field.default
                             yield input_widget
                             self.input_widgets[field.name] = input_widget
                         else:
@@ -181,14 +179,18 @@ class BaseFormModal(ModalScreen):
                                 classes="form-input",
                                 type=input_type,
                             )
-                            if field.default:
-                                input_widget.value = field.default
                             yield input_widget
                             self.input_widgets[field.name] = input_widget
 
             with Horizontal(id="form-buttons"):
                 yield Button("Save", id="btn-save", variant="primary")
                 yield Button("Cancel", id="btn-cancel")
+
+    def on_mount(self) -> None:
+        """Set field defaults after mount."""
+        for field in self.fields:
+            if field.name in self.input_widgets and field.default:
+                self.input_widgets[field.name].value = field.default
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
