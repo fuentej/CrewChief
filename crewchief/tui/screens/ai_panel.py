@@ -40,6 +40,14 @@ class AIPanelScreen(Screen):
         overflow: auto;
     }
 
+    .section-header {
+        width: 100%;
+        height: 1;
+        color: $secondary;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
     .ai-section {
         width: 100%;
         height: auto;
@@ -97,13 +105,16 @@ class AIPanelScreen(Screen):
 
         with Container(id="content-area"):
             # Garage Summary
+            yield Label("[ GARAGE SUMMARY ]", classes="section-header")
             yield Static("", classes="ai-section")
 
             # Maintenance Suggestions
+            yield Label("[ MAINTENANCE SUGGESTIONS ]", classes="section-header")
             yield Static("", classes="ai-section")
 
             # Track Prep (single vehicle only)
             if self.car_id:
+                yield Label("[ TRACK DAY PREP ]", classes="section-header")
                 yield Static("", classes="ai-section")
 
         yield HelpFooter(
