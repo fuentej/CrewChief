@@ -163,7 +163,10 @@ class DashboardScreen(Screen):
 
     def compose(self):
         """Compose dashboard layout."""
-        yield ASCIIBanner(subtitle="THE GARAGE", subtitle_align="center", id="banner")
+        # Use the new enhanced banner design
+        banner = ASCIIBanner(id="banner")
+        banner.BANNER_TEXT = ASCIIBanner.get_alt_banner_3()
+        yield banner
 
         with Container(id="main-content"):
             # Left panel: Vehicle list and system status
