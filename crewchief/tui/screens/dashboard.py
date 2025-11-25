@@ -4,6 +4,7 @@ from textual.screen import Screen
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Static, Label
 from textual.binding import Binding
+from rich.text import Text
 
 from crewchief.models import Car
 from crewchief.tui.widgets import ASCIIBanner
@@ -16,6 +17,19 @@ from crewchief.tui.screens.costs_view import CostsViewScreen
 from crewchief.tui.screens.ai_panel import AIPanelScreen
 from crewchief.tui.screens.car_form import CarFormModal
 from crewchief.tui.screens.modals import ConfirmDeleteModal
+
+
+class SectionHeader(Static):
+    """Custom widget for rendering section headers with text."""
+
+    def __init__(self, title: str, **kwargs):
+        """Initialize header with title text."""
+        super().__init__(**kwargs)
+        self.title = title
+
+    def render(self) -> Text:
+        """Render the header text."""
+        return Text(self.title, style="bold $secondary")
 
 
 class DashboardScreen(Screen):
@@ -154,18 +168,18 @@ class DashboardScreen(Screen):
             with Vertical(id="left-panel"):
                 # Vehicles section
                 with Vertical(id="vehicles-section"):
-                    yield Static("[ GARAGE FLEET ]", id="vehicles-header")
+                    yield SectionHeader("[ GARAGE FLEET ]", id="vehicles-header")
                     yield VehicleTable(id="vehicle-table")
 
                 # Status section
                 with Vertical(id="status-section"):
-                    yield Static("[ SYSTEM STATUS ]", id="status-header")
+                    yield SectionHeader("[ SYSTEM STATUS ]", id="status-header")
                     yield StatsPanel(id="stats-panel")
 
             # Right panel: Maintenance log for all cars
             with Vertical(id="right-panel"):
                 with Vertical(id="maintenance-section"):
-                    yield Static("[ MAINTENANCE LOG ]", id="maintenance-header")
+                    yield SectionHeader("[ MAINTENANCE LOG ]", id="maintenance-header")
                     yield Static(id="maintenance-log")
 
         yield HelpFooter(
