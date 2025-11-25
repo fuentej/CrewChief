@@ -132,8 +132,6 @@ class BaseFormModal(ModalScreen):
         super().__init__(**kwargs)
         self.title = title
         self.fields = fields
-        self.input_widgets: dict[str, Input] = {}
-        self.select_widgets: dict[str, Select] = {}
         self.form_data: dict[str, str] = {}
         self.error_message = ""
 
@@ -151,13 +149,11 @@ class BaseFormModal(ModalScreen):
                         )
 
                         if field.field_type == "select" and field.options:
-                            select = Select(
+                            yield Select(
                                 [(str(v), str(l)) for v, l in field.options],
-                                id=f"{field.name}",
+                                id=f"field-{field.name}",
                                 classes="form-select",
                             )
-                            yield select
-                            self.select_widgets[field.name] = select
                         else:
                             input_type = "text"
                             if field.field_type == "number":
@@ -166,24 +162,38 @@ class BaseFormModal(ModalScreen):
                                 input_type = "text"
 
                             css_class = "form-textarea" if field.field_type == "textarea" else "form-input"
-                            input_widget = Input(
-                                id=f"{field.name}",
+                            yield Input(
+                                id=f"field-{field.name}",
                                 placeholder=f"{field.label}...",
                                 classes=css_class,
                                 type=input_type,
                             )
-                            yield input_widget
-                            self.input_widgets[field.name] = input_widget
 
             with Horizontal(id="form-buttons"):
                 yield Button("Save", id="btn-save", variant="primary")
                 yield Button("Cancel", id="btn-cancel")
 
     def on_mount(self) -> None:
-        """Set field defaults after mount."""
+        """Set field defaults and focus after mount."""
+        # Set defaults
         for field in self.fields:
-            if field.name in self.input_widgets and field.default:
-                self.input_widgets[field.name].value = field.default
+            if field.default:
+                try:
+                    widget = self.query_one(f"#field-{field.name}")
+                    if isinstance(widget, Input):
+                        widget.value = field.default
+                    elif isinstance(widget, Select) and field.default:
+                        widget.value = field.default
+                except Exception:
+                    pass
+
+        # Set focus on first field
+        if self.fields:
+            try:
+                first_widget = self.query_one(f"#field-{self.fields[0].name}")
+                first_widget.focus()
+            except Exception:
+                pass
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -200,12 +210,15 @@ class BaseFormModal(ModalScreen):
         """Collect all form data into dict."""
         self.form_data = {}
         for field in self.fields:
-            if field.name in self.input_widgets:
-                self.form_data[field.name] = self.input_widgets[field.name].value
-            elif field.name in self.select_widgets:
-                select = self.select_widgets[field.name]
-                if select.value is not None:
-                    self.form_data[field.name] = str(select.value)
+            try:
+                widget = self.query_one(f"#field-{field.name}")
+                if isinstance(widget, Input):
+                    self.form_data[field.name] = widget.value
+                elif isinstance(widget, Select):
+                    if widget.value is not None:
+                        self.form_data[field.name] = str(widget.value)
+            except Exception:
+                pass
 
     def validate_form(self) -> bool:
         """Validate form data. Override in subclasses for custom validation.
@@ -215,12 +228,16 @@ class BaseFormModal(ModalScreen):
         """
         for field in self.fields:
             if field.required:
-                if field.name in self.input_widgets:
-                    if not self.input_widgets[field.name].value.strip():
-                        return False
-                elif field.name in self.select_widgets:
-                    if self.select_widgets[field.name].value is None:
-                        return False
+                try:
+                    widget = self.query_one(f"#field-{field.name}")
+                    if isinstance(widget, Input):
+                        if not widget.value.strip():
+                            return False
+                    elif isinstance(widget, Select):
+                        if widget.value is None:
+                            return False
+                except Exception:
+                    return False
         return True
 
     def show_error(self, message: str) -> None:
