@@ -4,7 +4,11 @@
 
 > **Note:** CrewChief is a **demonstration project** showcasing local-first LLM integration patterns and best practices for building AI-powered CLI applications. See [LESSONS_LEARNED.md](LESSONS_LEARNED.md) for insights on working with local LLM services, handling JSON parsing, and defensive programming strategies.
 
-CrewChief is a Python CLI application that helps you manage your garage and track maintenance for multiple vehicles, with AI-powered suggestions and insights using a local LLM.
+CrewChief is a Python CLI application that helps you manage your garage and track maintenance for multiple vehicles, with AI-powered suggestions and insights using a local LLM. It also includes an interactive terminal UI for managing your garage visually.
+
+**Quick Links:**
+- 🖥️ **[TUI Documentation](TUI.md)** - Full guide to the interactive terminal interface
+- 💻 **[CLI Commands](#commands)** - Command-line usage below
 
 ## Features
 
