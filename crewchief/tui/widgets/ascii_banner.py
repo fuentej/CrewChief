@@ -112,9 +112,9 @@ class ASCIIBanner(Widget):
     def get_alt_banner_3() -> str:
         """Alternative banner design 3: ASCII CREWCHIEF GARAGE with subtitle."""
         return r"""
-                ═══ C R E W C H I E F ═══
+               ═══ C R E W C H I E F ═══
 
-                   🏁 G A R A G E 🏁
+                  🏁 G A R A G E 🏁
 
-              If you're not 1st, you're last
+             If you're not 1st, you're last
         """
