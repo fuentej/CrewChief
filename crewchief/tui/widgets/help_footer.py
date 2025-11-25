@@ -31,11 +31,11 @@ class HelpFooter(Widget):
         self.help_text = help_text
 
     def render(self) -> Text:
-        """Render the help footer."""
+        """Render the help footer with theme-aware styling."""
         if not self.help_text:
             return Text("")
 
-        return Text(self.help_text, style="dim white")
+        return Text(self.help_text, style="white")
 
     def update_help(self, help_text: str) -> None:
         """Update the help text.

@@ -14,6 +14,7 @@ from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.vehicle_detail import VehicleDetailScreen
 from crewchief.tui.screens.costs_view import CostsViewScreen
 from crewchief.tui.screens.ai_panel import AIPanelScreen
+from crewchief.tui.screens.car_form import CarFormModal
 from crewchief.tui.screens.modals import ConfirmDeleteModal
 
 
@@ -186,7 +187,18 @@ class DashboardScreen(Screen):
 
     def action_new_vehicle(self) -> None:
         """Create a new vehicle."""
-        self.notify("Add car form - coming soon", timeout=2)
+        def handle_form_result(form_data: dict) -> None:
+            """Handle form submission."""
+            if form_data:
+                try:
+                    car = Car(**form_data)
+                    result = self.garage_service.add_vehicle(car)
+                    self.notify("Vehicle added to garage", timeout=2)
+                    self.load_data()
+                except Exception as e:
+                    self.notify(f"Error adding vehicle: {str(e)}", timeout=3)
+
+        self.app.push_screen(CarFormModal(), callback=handle_form_result)
 
     def action_view_vehicle(self) -> None:
         """View selected vehicle details."""
@@ -200,7 +212,22 @@ class DashboardScreen(Screen):
         if self.vehicle_table:
             car_id = self.vehicle_table.get_selected_car_id()
             if car_id:
-                self.notify("Edit car form - coming soon", timeout=2)
+                car = self.garage_service.get_vehicle(car_id)
+                if car:
+                    def handle_form_result(form_data: dict) -> None:
+                        """Handle form submission."""
+                        if form_data:
+                            try:
+                                self.garage_service.update_vehicle(car_id, **form_data)
+                                self.notify("Vehicle updated", timeout=2)
+                                self.load_data()
+                            except Exception as e:
+                                self.notify(f"Error updating vehicle: {str(e)}", timeout=3)
+
+                    self.app.push_screen(
+                        CarFormModal(car),
+                        callback=handle_form_result,
+                    )
 
     def action_delete_vehicle(self) -> None:
         """Delete selected vehicle."""

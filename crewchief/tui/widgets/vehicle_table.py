@@ -3,6 +3,7 @@
 from textual.widgets import DataTable
 from textual.binding import Binding
 from crewchief.models import Car
+from crewchief.tui.services.garage_service import GarageService
 
 
 class VehicleTable(DataTable):
@@ -35,10 +36,35 @@ class VehicleTable(DataTable):
         """Initialize vehicle table."""
         super().__init__(**kwargs)
         self.vehicles: list[Car] = []
+        self.garage_service = GarageService()
 
     def setup_table(self) -> None:
         """Set up table columns."""
         self.add_columns("ID", "Vehicle", "Usage", "Odometer", "Status")
+
+    def _determine_status(self, car: Car) -> str:
+        """Determine vehicle status based on due services.
+
+        Args:
+            car: Car object to check status for.
+
+        Returns:
+            Status string with symbol and label.
+        """
+        try:
+            # Check for due services
+            vehicle_stats = self.garage_service.get_vehicle_with_stats(car.id)
+            if vehicle_stats and vehicle_stats.get("due_services"):
+                due_services = vehicle_stats["due_services"]
+                has_overdue = any(service.get("is_due", False) for service in due_services)
+                if has_overdue:
+                    return "✗ OVERDUE"
+                else:
+                    return "⚠ DUE"
+            return "● OK"
+        except Exception:
+            # Default status if service check fails
+            return "● OK"
 
     def populate_vehicles(self, vehicles: list[Car]) -> None:
         """Populate table with vehicles.
@@ -50,8 +76,8 @@ class VehicleTable(DataTable):
         self.clear()
 
         for car in vehicles:
-            # Determine status badge
-            status = "● READY"  # Default - would check due services in real implementation
+            # Determine status based on due services
+            status = self._determine_status(car)
 
             odometer_str = f"{car.current_odometer:,} mi" if car.current_odometer else "—"
 

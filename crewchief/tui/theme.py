@@ -1,11 +1,19 @@
 """Mainframe-style TUI theme for CrewChief.
 
-Color scheme inspired by classic mainframe/BBS/AS/400 terminals:
-- Green: healthy/success/idle-ready
-- Yellow: running/in-progress/warnings
-- Red: error/fail/needs attention
-- Cyan: selected/focused element
-- Magenta: minor accents/section headers
+Color Paradigm:
+- GREEN (#00ff00): Success states, healthy systems, completed actions
+- YELLOW (#ffff00): Warnings, caution states, in-progress items
+- RED (#ff0000): Errors, critical alerts, failed states, destructive actions
+- CYAN (#00ffff): Informational messages, data display, neutral highlights
+- BRIGHT CYAN (#00ffff + bold): Focus states, selected items, active elements
+- MAGENTA (#ff00ff): Section headers, category labels, secondary accents
+- WHITE (#ffffff): Primary text, default content
+- GRAY (#808080): Secondary text, disabled states, subtle elements
+
+Usage Guidelines:
+- Use StatusBadge widget for all status indicators
+- Reference CSS variables ($success, $warning, $error) instead of hard-coded colors
+- Keep contrast high for terminal readability
 """
 
 # Textual CSS theme for mainframe aesthetic
@@ -21,6 +29,7 @@ Screen {
     color: $accent;
     border: heavy $primary;
     background: $boost;
+    text-style: bold;
 }
 
 .panel {
@@ -33,24 +42,36 @@ Screen {
     text-style: bold;
 }
 
+/* Status color classes - high contrast */
 .status-ready {
     color: $success;
+    text-style: bold;
 }
 
 .status-warning {
     color: $warning;
+    text-style: bold;
 }
 
 .status-error {
     color: $error;
+    text-style: bold;
 }
 
 .status-info {
     color: $accent;
+    text-style: bold;
 }
 
+/* Focus and selection states */
 .focused {
     background: $accent;
+    color: $surface;
+    text-style: bold;
+}
+
+.selected {
+    background: $secondary;
     color: $surface;
 }
 
@@ -64,8 +85,31 @@ Screen {
 
 .key-hint {
     color: $accent;
+    text-style: bold;
 }
 
+.header {
+    color: $secondary;
+    text-style: bold;
+}
+
+.success-text {
+    color: $success;
+}
+
+.warning-text {
+    color: $warning;
+}
+
+.error-text {
+    color: $error;
+}
+
+.info-text {
+    color: $accent;
+}
+
+/* Enhanced DataTable styling */
 DataTable {
     border: solid $primary;
 }
@@ -73,6 +117,7 @@ DataTable {
 DataTable > .cursor-cell {
     background: $accent;
     color: $surface;
+    text-style: bold;
 }
 
 DataTable > .odd-row {
@@ -81,6 +126,12 @@ DataTable > .odd-row {
 
 DataTable > .even-row {
     background: $surface;
+}
+
+DataTable > .header-cell {
+    color: $secondary;
+    text-style: bold;
+    background: $boost;
 }
 """
 

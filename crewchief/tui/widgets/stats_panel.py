@@ -67,7 +67,7 @@ class StatsPanel(Widget):
         self.refresh()
 
     def render(self) -> RenderableType:
-        """Render the stats panel."""
+        """Render the stats panel with theme-aware colors."""
         lines = []
 
         # Title line
@@ -82,8 +82,20 @@ class StatsPanel(Widget):
             # Pad to align values
             line = line.ljust(25)
             line_text = Text()
-            line_text.append(line, style="white")
-            line_text.append(str(value), style="cyan")
+            line_text.append(line, style="bold white")
+
+            # Color value based on content (heuristic for status keywords)
+            value_str = str(value)
+            if any(word in value_str.upper() for word in ["ONLINE", "HEALTHY", "OK", "YES"]):
+                value_style = "bold green"
+            elif any(word in value_str.upper() for word in ["OFFLINE", "WARNING", "CAUTION"]):
+                value_style = "bold yellow"
+            elif any(word in value_str.upper() for word in ["ERROR", "FAIL", "NO"]):
+                value_style = "bold red"
+            else:
+                value_style = "bold cyan"
+
+            line_text.append(value_str, style=value_style)
             lines.append(line_text)
 
         if not lines:

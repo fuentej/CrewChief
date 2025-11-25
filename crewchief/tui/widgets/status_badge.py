@@ -5,7 +5,7 @@ from rich.text import Text
 
 
 class StatusBadge(Widget):
-    """Displays color-coded status indicator."""
+    """Displays color-coded status indicator with theme-aware colors."""
 
     DEFAULT_CSS = """
     StatusBadge {
@@ -14,28 +14,32 @@ class StatusBadge(Widget):
     }
     """
 
-    # Status to (symbol, color) mapping
+    # Status to (symbol, color_style) mapping
+    # Uses Textual's built-in colors and bold for high contrast
     STATUS_MAP = {
-        "ready": ("●", "green"),
-        "warning": ("⚠", "yellow"),
-        "error": ("✗", "red"),
-        "info": ("ℹ", "cyan"),
-        "running": ("⟳", "yellow"),
+        "ready": ("●", "bold green"),
+        "warning": ("⚠", "bold yellow"),
+        "error": ("✗", "bold red"),
+        "info": ("ℹ", "bold cyan"),
+        "running": ("⟳", "bold yellow"),
+        "ok": ("●", "bold green"),
+        "due": ("⚠", "bold yellow"),
+        "overdue": ("✗", "bold red"),
     }
 
     def __init__(self, status: str = "info", **kwargs):
         """Initialize badge with status.
 
         Args:
-            status: Status key (ready, warning, error, info, running).
+            status: Status key (ready, warning, error, info, running, ok, due, overdue).
         """
         super().__init__(**kwargs)
         self.status = status
 
     def render(self) -> Text:
-        """Render the status badge."""
-        symbol, color = self.STATUS_MAP.get(self.status, ("?", "white"))
-        return Text(symbol, style=color)
+        """Render the status badge with theme-aware colors."""
+        symbol, style = self.STATUS_MAP.get(self.status, ("?", "bold white"))
+        return Text(symbol, style=style)
 
     def update_status(self, status: str) -> None:
         """Update the status.
