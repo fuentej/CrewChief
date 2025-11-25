@@ -56,10 +56,11 @@ class DashboardScreen(Screen):
 
     #vehicles-section > #vehicles-header {
         width: 100%;
-        height: 1;
+        height: auto;
         background: $boost;
         color: $secondary;
         text-style: bold;
+        padding: 1 0;
         margin-bottom: 1;
     }
 
@@ -77,10 +78,11 @@ class DashboardScreen(Screen):
 
     #status-section > #status-header {
         width: 100%;
-        height: 1;
+        height: auto;
         background: $boost;
         color: $secondary;
         text-style: bold;
+        padding: 1 0;
         margin-bottom: 1;
     }
 
@@ -106,10 +108,11 @@ class DashboardScreen(Screen):
 
     #maintenance-section > #maintenance-header {
         width: 100%;
-        height: 1;
+        height: auto;
         background: $boost;
         color: $secondary;
         text-style: bold;
+        padding: 1 0;
         margin-bottom: 1;
     }
 
