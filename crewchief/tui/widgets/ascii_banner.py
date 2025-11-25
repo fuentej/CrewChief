@@ -77,8 +77,8 @@ class ASCIIBanner(Widget):
                 # Center each line dynamically based on terminal width
                 centered_line = line.center(80)
                 if "CREWCHIEF" in line:
-                    # Main title in warning orange
-                    result.append(centered_line, style="bold #ff8800")
+                    # Main title in blue
+                    result.append(centered_line, style="bold #0080ff")
                 elif "GARAGE" in line:
                     # GARAGE in OK green
                     result.append(centered_line, style="bold #00ff00")
