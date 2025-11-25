@@ -462,6 +462,7 @@ class GarageRepository:
     def update_car_part(
         self,
         part_id: int,
+        part_category: PartCategory | str | None = None,
         brand: str | None = None,
         part_number: str | None = None,
         size_spec: str | None = None,
@@ -484,6 +485,11 @@ class GarageRepository:
         current_part = self._row_to_car_part(row)
 
         # Update only provided fields
+        if part_category is not None:
+            if isinstance(part_category, str):
+                current_part.part_category = PartCategory(part_category)
+            else:
+                current_part.part_category = part_category
         if brand is not None:
             current_part.brand = brand
         if part_number is not None:
@@ -499,10 +505,11 @@ class GarageRepository:
         cursor.execute(
             """
             UPDATE car_parts
-            SET brand = ?, part_number = ?, size_spec = ?, notes = ?, updated_at = ?
+            SET part_category = ?, brand = ?, part_number = ?, size_spec = ?, notes = ?, updated_at = ?
             WHERE id = ?
         """,
             (
+                current_part.part_category.value,
                 current_part.brand,
                 current_part.part_number,
                 current_part.size_spec,
