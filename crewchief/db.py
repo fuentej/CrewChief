@@ -366,7 +366,7 @@ class GarageRepository:
             WHERE id = ?
         """,
             (
-                current_event.service_date,
+                current_event.service_date.isoformat() if isinstance(current_event.service_date, date) else current_event.service_date,
                 current_event.service_type.value,
                 current_event.odometer,
                 current_event.description,
