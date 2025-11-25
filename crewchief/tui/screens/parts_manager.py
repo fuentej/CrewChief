@@ -101,6 +101,7 @@ class PartsManagerScreen(Screen):
         self.parts_service = PartsService()
         self.parts_table: PartsTable | None = None
         self.detail_content: Static | None = None
+        self._current_notification = None
 
     def compose(self):
         """Compose parts manager layout."""
@@ -161,6 +162,9 @@ class PartsManagerScreen(Screen):
 
     def action_back(self) -> None:
         """Go back to previous screen."""
+        # Dismiss notification when leaving
+        if self._current_notification:
+            self._current_notification.dismiss()
         self.app.pop_screen()
 
     def action_view_part(self) -> None:
@@ -168,6 +172,10 @@ class PartsManagerScreen(Screen):
         if self.parts_table:
             part = self.parts_table.get_selected_part()
             if part:
+                # Dismiss previous notification if it exists
+                if self._current_notification:
+                    self._current_notification.dismiss()
+
                 detail_text = (
                     f"Category: {part.part_category.value.replace('_', ' ').title()}\n"
                     f"Brand: {part.brand or '—'}\n"
@@ -175,7 +183,7 @@ class PartsManagerScreen(Screen):
                     f"Size/Spec: {part.size_spec or '—'}\n\n"
                     f"Notes: {part.notes or 'No notes'}"
                 )
-                self.notify(detail_text, timeout=0)
+                self._current_notification = self.notify(detail_text, timeout=0)
 
     def action_new_part(self) -> None:
         """Add a new part to the profile."""
