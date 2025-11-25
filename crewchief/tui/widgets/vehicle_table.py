@@ -35,7 +35,7 @@ class VehicleTable(DataTable):
 
     def __init__(self, **kwargs):
         """Initialize vehicle table."""
-        super().__init__(**kwargs)
+        super().__init__(cursor_type="row", **kwargs)
         self.vehicles: list[Car] = []
         self.garage_service = GarageService()
 

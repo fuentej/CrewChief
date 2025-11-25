@@ -28,7 +28,7 @@ class PartsTable(DataTable):
 
     def __init__(self, **kwargs):
         """Initialize parts table."""
-        super().__init__(**kwargs)
+        super().__init__(cursor_type="row", **kwargs)
         self.parts: list[CarPart] = []
 
     def setup_table(self) -> None:

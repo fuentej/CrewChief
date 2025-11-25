@@ -28,7 +28,7 @@ class MaintenanceTable(DataTable):
 
     def __init__(self, **kwargs):
         """Initialize maintenance table."""
-        super().__init__(**kwargs)
+        super().__init__(cursor_type="row", **kwargs)
         self.events: list[MaintenanceEvent] = []
 
     def setup_table(self) -> None:
