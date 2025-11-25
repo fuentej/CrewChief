@@ -8,7 +8,6 @@ from textual.binding import Binding
 from crewchief.models import MaintenanceEvent
 from crewchief.tui.widgets.maintenance_table import MaintenanceTable
 from crewchief.tui.widgets.help_footer import HelpFooter
-from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.maintenance_form import MaintenanceEventFormModal
@@ -92,8 +91,6 @@ class MaintenanceLogScreen(Screen):
 
     def compose(self):
         """Compose maintenance log layout."""
-        yield ASCIIBanner(subtitle="SERVICE RECORDS", id="banner")
-
         with Container(id="header"):
             yield Label("[ MAINTENANCE LOG ]", id="title")
 
@@ -119,9 +116,13 @@ class MaintenanceLogScreen(Screen):
             self.dismiss()
             return
 
-        # Update title
+        # Update title with car name and page title right-justified
         title = self.query_one("#title", Label)
-        title.update(f"[ MAINTENANCE LOG: {car.display_name()} ]")
+        log_text = f"[ MAINTENANCE LOG: {car.display_name()} ]"
+        page_title = "SERVICE RECORDS"
+        # Approximate padding for right-justification
+        padding = " " * (70 - len(log_text) - len(page_title))
+        title.update(f"{log_text}{padding}{page_title}")
 
         # Load events
         events = self.maintenance_service.get_events_for_car(self.car_id)

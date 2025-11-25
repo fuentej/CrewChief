@@ -8,7 +8,6 @@ from textual.binding import Binding
 from crewchief.tui.widgets.maintenance_table import MaintenanceTable
 from crewchief.tui.widgets.stats_panel import StatsPanel
 from crewchief.tui.widgets.help_footer import HelpFooter
-from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.screens.maintenance_log import MaintenanceLogScreen
@@ -140,8 +139,6 @@ class VehicleDetailScreen(Screen):
 
     def compose(self):
         """Compose vehicle detail layout."""
-        yield ASCIIBanner(subtitle="THE CAR LIFT", id="banner")
-
         # Header with vehicle info
         with Container(id="header-section"):
             with Container(id="vehicle-info"):
@@ -184,9 +181,13 @@ class VehicleDetailScreen(Screen):
         due_services = vehicle_stats["due_services"]
         parts = vehicle_stats["parts"]
 
-        # Update header
+        # Update header with car name and page title right-justified
         title = self.query_one("#vehicle-title", Label)
-        title.update(f"◄ {car.display_name()}")
+        car_name = f"◄ {car.display_name()}"
+        page_title = "THE CAR LIFT"
+        # Approximate padding for right-justification
+        padding = " " * (60 - len(car_name) - len(page_title))
+        title.update(f"{car_name}{padding}{page_title}")
 
         details = self.query_one("#vehicle-details", Static)
         details_text = (

@@ -8,7 +8,6 @@ from textual.binding import Binding
 from crewchief.models import CarPart
 from crewchief.tui.widgets.parts_table import PartsTable
 from crewchief.tui.widgets.help_footer import HelpFooter
-from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.parts_service import PartsService
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.parts_form import PartsFormModal
@@ -92,8 +91,6 @@ class PartsManagerScreen(Screen):
 
     def compose(self):
         """Compose parts manager layout."""
-        yield ASCIIBanner(subtitle="THE PARTS SHELF", id="banner")
-
         with Container(id="header"):
             yield Label("[ PARTS PROFILE ]", id="title")
 
@@ -119,9 +116,12 @@ class PartsManagerScreen(Screen):
             self.dismiss()
             return
 
-        # Update title
+        # Update title with page name right-justified
         title = self.query_one("#title", Label)
-        title.update(f"[ PARTS PROFILE: {car.display_name()} ]")
+        parts_text = f"[ PARTS PROFILE: {car.display_name()} ]"
+        page_title = "THE PARTS SHELF"
+        padding = " " * (70 - len(parts_text) - len(page_title))
+        title.update(f"{parts_text}{padding}{page_title}")
 
         # Load parts
         parts = self.parts_service.get_parts_for_car(self.car_id)

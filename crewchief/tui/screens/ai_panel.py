@@ -6,7 +6,6 @@ from textual.widgets import Static, Label, Button
 from textual.binding import Binding
 
 from crewchief.tui.widgets.help_footer import HelpFooter
-from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.ai_service import AIService
 from crewchief.tui.services.garage_service import GarageService
 
@@ -101,8 +100,6 @@ class AIPanelScreen(Screen):
 
     def compose(self):
         """Compose AI panel layout."""
-        yield ASCIIBanner(subtitle="AI ADVISOR", id="banner")
-
         with Container(id="header"):
             yield Label("[ AI INSIGHTS ]", id="title")
 
@@ -131,6 +128,21 @@ class AIPanelScreen(Screen):
 
     def load_ai_data(self) -> None:
         """Load and display AI insights."""
+        # Update title with page name right-justified
+        title = self.query_one("#title", Label)
+        if self.car_id:
+            car = self.garage_service.get_vehicle(self.car_id)
+            if car:
+                ai_text = f"[ AI INSIGHTS: {car.display_name()} ]"
+            else:
+                ai_text = "[ AI INSIGHTS ]"
+        else:
+            ai_text = "[ AI INSIGHTS ]"
+
+        page_title = "AI ADVISOR"
+        padding = " " * (70 - len(ai_text) - len(page_title))
+        title.update(f"{ai_text}{padding}{page_title}")
+
         sections = self.query(".ai-section")
 
         if len(sections) >= 1:

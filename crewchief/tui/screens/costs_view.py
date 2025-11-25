@@ -6,7 +6,6 @@ from textual.widgets import Static, Label
 from textual.binding import Binding
 
 from crewchief.tui.widgets.help_footer import HelpFooter
-from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.garage_service import GarageService
 
 
@@ -96,8 +95,6 @@ class CostsViewScreen(Screen):
 
     def compose(self):
         """Compose costs view layout."""
-        yield ASCIIBanner(subtitle="COST LEDGER", id="banner")
-
         with Container(id="header"):
             yield Label("[ COST ANALYSIS ]", id="title")
 
@@ -140,9 +137,12 @@ class CostsViewScreen(Screen):
             self.dismiss()
             return
 
-        # Update title
+        # Update title with page name right-justified
         title = self.query_one("#title", Label)
-        title.update(f"[ COST ANALYSIS: {car.display_name()} ]")
+        cost_text = f"[ COST ANALYSIS: {car.display_name()} ]"
+        page_title = "COST LEDGER"
+        padding = " " * (70 - len(cost_text) - len(page_title))
+        title.update(f"{cost_text}{padding}{page_title}")
 
         # Get cost data from repository
         costs = self.garage_service.repo.get_maintenance_costs(self.car_id)
