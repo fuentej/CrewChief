@@ -48,7 +48,7 @@ class DashboardScreen(Screen):
 
     #vehicles-section {
         width: 100%;
-        height: 1fr;
+        height: 60%;
         layout: vertical;
         border-bottom: solid $primary;
         padding-bottom: 1;
@@ -70,7 +70,7 @@ class DashboardScreen(Screen):
 
     #status-section {
         width: 100%;
-        height: auto;
+        height: 40%;
         layout: vertical;
         padding: 1;
     }
