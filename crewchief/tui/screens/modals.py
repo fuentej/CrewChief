@@ -81,7 +81,7 @@ class BaseFormModal(ModalScreen):
         width: 100%;
         height: 1;
         color: $text;
-        margin-bottom: 0.5;
+        margin-bottom: 1;
     }
 
     .form-input {
@@ -117,7 +117,7 @@ class BaseFormModal(ModalScreen):
 
     .error-text {
         color: $error;
-        margin-bottom: 0.5;
+        margin-bottom: 1;
     }
     """
 
