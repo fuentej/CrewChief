@@ -69,16 +69,23 @@ class ASCIIBanner(Widget):
     def render(self) -> Text:
         """Render the banner with optional subtitle."""
         # Special handling for the new banner design with embedded subtitle
-        if "If you're not 1st" in self.BANNER_TEXT:
+        if "If you're not 1st" in self.BANNER_TEXT or any(phrase in self.BANNER_TEXT for phrase in self.MOTIVATIONAL_PHRASES):
             # Build centered banner with color-coded lines
             lines = self.BANNER_TEXT.split("\n")
             result = Text()
             for line in lines:
                 # Center each line dynamically based on terminal width
                 centered_line = line.center(80)
-                if "If you're not 1st" in line:
+                if "CREWCHIEF" in line:
+                    # Main title in warning orange
+                    result.append(centered_line, style="bold #ff8800")
+                elif "GARAGE" in line:
+                    # GARAGE in OK green
+                    result.append(centered_line, style="bold #00ff00")
+                elif line.strip() and any(phrase in line for phrase in self.MOTIVATIONAL_PHRASES):
+                    # Rotating phrases in yellow
                     result.append(centered_line, style="bold yellow")
-                elif line.strip():  # Non-empty lines get cyan
+                elif line.strip():  # Other non-empty lines get cyan
                     result.append(centered_line, style="bold cyan")
                 else:  # Empty lines stay empty
                     result.append(line)
