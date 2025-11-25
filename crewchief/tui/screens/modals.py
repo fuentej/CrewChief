@@ -86,19 +86,22 @@ class BaseFormModal(ModalScreen):
 
     .form-input {
         width: 100%;
-        height: 1;
+        height: auto;
+        min-height: 3;
         border: solid $primary;
     }
 
     .form-select {
         width: 100%;
-        height: 3;
+        height: auto;
+        min-height: 3;
         border: solid $primary;
     }
 
     .form-textarea {
         width: 100%;
-        height: 4;
+        height: auto;
+        min-height: 5;
         border: solid $primary;
     }
 
