@@ -56,11 +56,10 @@ class DashboardScreen(Screen):
 
     #vehicles-section > #vehicles-header {
         width: 100%;
-        height: auto;
+        height: 1;
         background: $boost;
         color: $secondary;
         text-style: bold;
-        padding: 1 0;
         margin-bottom: 1;
     }
 
@@ -78,11 +77,10 @@ class DashboardScreen(Screen):
 
     #status-section > #status-header {
         width: 100%;
-        height: auto;
+        height: 1;
         background: $boost;
         color: $secondary;
         text-style: bold;
-        padding: 1 0;
         margin-bottom: 1;
     }
 
@@ -108,11 +106,10 @@ class DashboardScreen(Screen):
 
     #maintenance-section > #maintenance-header {
         width: 100%;
-        height: auto;
+        height: 1;
         background: $boost;
         color: $secondary;
         text-style: bold;
-        padding: 1 0;
         margin-bottom: 1;
     }
 
@@ -157,18 +154,18 @@ class DashboardScreen(Screen):
             with Vertical(id="left-panel"):
                 # Vehicles section
                 with Vertical(id="vehicles-section"):
-                    yield Label("[ GARAGE FLEET ]", id="vehicles-header")
+                    yield Static("[ GARAGE FLEET ]", id="vehicles-header")
                     yield VehicleTable(id="vehicle-table")
 
                 # Status section
                 with Vertical(id="status-section"):
-                    yield Label("[ SYSTEM STATUS ]", id="status-header")
+                    yield Static("[ SYSTEM STATUS ]", id="status-header")
                     yield StatsPanel(id="stats-panel")
 
             # Right panel: Maintenance log for all cars
             with Vertical(id="right-panel"):
                 with Vertical(id="maintenance-section"):
-                    yield Label("[ MAINTENANCE LOG ]", id="maintenance-header")
+                    yield Static("[ MAINTENANCE LOG ]", id="maintenance-header")
                     yield Static(id="maintenance-log")
 
         yield HelpFooter(
