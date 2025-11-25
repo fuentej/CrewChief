@@ -64,6 +64,6 @@ class ASCIIBanner(Widget):
             if self.subtitle_align == "right":
                 padding = " " * (80 - len(self.subtitle) - 2)
                 text.append(padding)
-            text.append(self.subtitle, style="bold $secondary")
+            text.append(self.subtitle, style="bold magenta")
 
         return text
