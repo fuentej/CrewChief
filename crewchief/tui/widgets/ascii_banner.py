@@ -1,5 +1,6 @@
 """ASCII art banner widget for CrewChief TUI."""
 
+import random
 from textual.widget import Widget
 from textual.containers import Container
 from textual.reactive import reactive
@@ -14,6 +15,18 @@ class ASCIIBanner(Widget):
  / /   / ___/ _ \/ / / // /   / __ \/ / _ \/ /_
 / /___/ /  /  __/ /_/ // /___/ / / / /  __/ __/
 \____/_/   \___/\__,_/ \____/_/ /_/_/\___/_/     """
+
+    # Rotating motivational phrases
+    MOTIVATIONAL_PHRASES = [
+        "First or last, that's racing",
+        "Second place is first loser",
+        "Win or go home",
+        "No participation trophies",
+        "P1 or nothing",
+        "Last place is first to leave",
+        "Victory is the only option",
+        "Dominate or don't show up",
+    ]
 
     DEFAULT_CSS = """
     ASCIIBanner {
@@ -112,6 +125,16 @@ class ASCIIBanner(Widget):
         """
 
     @staticmethod
+    def get_random_phrase() -> str:
+        """Get a random motivational phrase.
+
+        Returns:
+            A random phrase from the motivational phrases list.
+        """
+        return random.choice(ASCIIBanner.MOTIVATIONAL_PHRASES)
+
+    @staticmethod
     def get_alt_banner_3() -> str:
-        """Alternative banner design 3: ASCII CREWCHIEF GARAGE with subtitle."""
-        return "═══ C R E W C H I E F ═══\n\n🏁 G A R A G E 🏁\n\nIf you're not 1st, you're last"
+        """Alternative banner design 3: ASCII CREWCHIEF GARAGE with rotating subtitle."""
+        phrase = ASCIIBanner.get_random_phrase()
+        return f"═══ C R E W C H I E F ═══\n\n🏁 G A R A G E 🏁\n\n{phrase}"
