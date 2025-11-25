@@ -144,12 +144,12 @@ class CarFormModal(BaseFormModal):
             "year": year,
             "make": self.form_data["make"],
             "model": self.form_data["model"],
-            "trim": self.form_data.get("trim") or None,
-            "vin": self.form_data.get("vin") or None,
+            "trim": self.form_data.get("trim"),
+            "vin": self.form_data.get("vin"),
             "usage_type": usage_type,
             "current_odometer": odometer,
-            "nickname": self.form_data.get("nickname") or None,
-            "notes": self.form_data.get("notes") or None,
+            "nickname": self.form_data.get("nickname"),
+            "notes": self.form_data.get("notes"),
         }
 
         # Preserve ID and timestamps if editing

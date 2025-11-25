@@ -72,14 +72,13 @@ class PartsFormModal(BaseFormModal):
         # Convert string values to proper types
         part_category = PartCategory(self.form_data["part_category"])
 
-        # Build part object
+        # Build part object (car_id excluded as it shouldn't change during update)
         part_data = {
-            "car_id": self.car_id,
             "part_category": part_category,
-            "brand": self.form_data.get("brand") or None,
-            "part_number": self.form_data.get("part_number") or None,
-            "size_spec": self.form_data.get("size_spec") or None,
-            "notes": self.form_data.get("notes") or None,
+            "brand": self.form_data.get("brand"),
+            "part_number": self.form_data.get("part_number"),
+            "size_spec": self.form_data.get("size_spec"),
+            "notes": self.form_data.get("notes"),
         }
 
         # Preserve ID if editing
