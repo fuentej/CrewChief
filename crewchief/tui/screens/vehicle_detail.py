@@ -206,15 +206,14 @@ class VehicleDetailScreen(Screen):
         else:
             due_text = "No due services tracked."
 
-        due_panel = self.query_one("#due-services", Static)
-        due_panel.update(due_text)
-
         # Load parts
         if parts:
-            parts_text = "\nParts Profile:\n"
+            due_text += "\nParts Profile:\n"
             for part in parts:
-                parts_text += f"  • {part.part_category.value}: {part.brand or '—'}\n"
-            due_panel.update(due_panel.renderable + parts_text)
+                due_text += f"  • {part.part_category.value}: {part.brand or '—'}\n"
+
+        due_panel = self.query_one("#due-services", Static)
+        due_panel.update(due_text)
 
     def action_back(self) -> None:
         """Go back to dashboard."""
