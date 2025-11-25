@@ -153,7 +153,7 @@ class BaseFormModal(ModalScreen):
 
                         if field.field_type == "select" and field.options:
                             yield Select(
-                                [(str(v), str(l)) for v, l in field.options],
+                                [(str(l), str(v)) for v, l in field.options],
                                 id=f"field-{field.name}",
                                 classes="form-select",
                             )
