@@ -23,7 +23,7 @@ class ASCIIBanner(Widget):
         border: heavy $primary;
         color: $accent;
         text-align: center;
-        padding: 0 1;
+        padding: 0 0;
     }
 
     ASCIIBanner .subtitle {
