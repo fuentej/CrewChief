@@ -155,18 +155,11 @@ class BaseFormModal(ModalScreen):
                                 classes="form-select",
                             )
                         else:
-                            input_type = "text"
-                            if field.field_type == "number":
-                                input_type = "number"
-                            elif field.field_type == "date":
-                                input_type = "text"
-
                             css_class = "form-textarea" if field.field_type == "textarea" else "form-input"
                             yield Input(
                                 id=f"field-{field.name}",
                                 placeholder=f"{field.label}...",
                                 classes=css_class,
-                                type=input_type,
                             )
 
             with Horizontal(id="form-buttons"):
