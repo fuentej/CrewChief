@@ -222,19 +222,9 @@ class VehicleDetailScreen(Screen):
 
     def action_view_details(self) -> None:
         """View detailed car information."""
-        if self.car:
-            info = f"""
-{self.car.display_name()}
-
-Year: {self.car.year}
-Make: {self.car.make}
-Model: {self.car.model}
-Trim: {self.car.trim or "—"}
-VIN: {self.car.vin or "—"}
-Usage: {self.car.usage_type.value}
-Odometer: {self.car.current_odometer:,} mi
-Notes: {self.car.notes or "—"}
-            """
+        car = self.garage_service.get_vehicle(self.car_id)
+        if car:
+            info = f"{car.display_name()}\n\nYear: {car.year}\nMake: {car.make}\nModel: {car.model}\nTrim: {car.trim or '—'}\nVIN: {car.vin or '—'}\nUsage: {car.usage_type.value}\nOdometer: {car.current_odometer:,} mi\nNotes: {car.notes or '—'}"
             self.notify(info, timeout=5)
 
     def action_view_log(self) -> None:
