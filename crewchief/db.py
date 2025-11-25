@@ -318,6 +318,8 @@ class GarageRepository:
     def update_maintenance_event(
         self,
         event_id: int,
+        service_date: date | None = None,
+        service_type: ServiceType | None = None,
         odometer: int | None = None,
         description: str | None = None,
         parts: str | None = None,
@@ -341,6 +343,10 @@ class GarageRepository:
         current_event = self._row_to_maintenance_event(row)
 
         # Update only provided fields
+        if service_date is not None:
+            current_event.service_date = service_date
+        if service_type is not None:
+            current_event.service_type = service_type
         if odometer is not None:
             current_event.odometer = odometer
         if description is not None:
@@ -356,10 +362,12 @@ class GarageRepository:
         cursor.execute(
             """
             UPDATE maintenance_events
-            SET odometer = ?, description = ?, parts = ?, cost = ?, location = ?
+            SET service_date = ?, service_type = ?, odometer = ?, description = ?, parts = ?, cost = ?, location = ?
             WHERE id = ?
         """,
             (
+                current_event.service_date,
+                current_event.service_type.value,
                 current_event.odometer,
                 current_event.description,
                 current_event.parts,
