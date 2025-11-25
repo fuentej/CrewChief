@@ -66,6 +66,19 @@ class ASCIIBanner(Widget):
                 text.append(padding)
             text.append(self.subtitle, style="bold magenta")
 
+        # Special handling for the new banner design with embedded subtitle
+        if "If you're not 1st" in self.BANNER_TEXT:
+            # Return the banner text with the subtitle in yellow
+            lines = self.BANNER_TEXT.split("\n")
+            result = Text()
+            for line in lines:
+                if "If you're not 1st" in line:
+                    result.append(line, style="bold yellow")
+                else:
+                    result.append(line, style="bold cyan")
+                result.append("\n")
+            return result
+
         return text
 
     @staticmethod
@@ -97,21 +110,15 @@ class ASCIIBanner(Widget):
 
     @staticmethod
     def get_alt_banner_3() -> str:
-        """Alternative banner design 3: Box with original CREWCHIEF ASCII."""
+        """Alternative banner design 3: ASCII CREWCHIEF GARAGE with subtitle."""
         return r"""
-    ╔══════════════════════════════════════════════════════════════════╗
-    ║                                                                  ║
-    ║      ______                 ________    _      ____             ║
-    ║    / ____/_______  __  __ / ____/ /_  (_)__  / __/             ║
-    ║   / /   / ___/ _ \/ / / // /   / __ \/ / _ \/ /_               ║
-    ║  / /___/ /  /  __/ /_/ // /___/ / / / /  __/ __/               ║
-    ║  \____/_/   \___/\__,_/ \____/_/ /_/_/\___/_/                  ║
-    ║                                                                  ║
-    ║             "Win it on Sunday, Work it on Saturday"             ║
-    ║                                                                  ║
-    ║        Second Place is the First Loser · Raceday Ready         ║
-    ║                                                                  ║
-    ║              If you're not 1st, you're last                     ║
-    ║                                                                  ║
-    ╚══════════════════════════════════════════════════════════════════╝
+      ______                 ________    _      ____
+    / ____/_______  __  __ / ____/ /_  (_)__  / __/
+   / /   / ___/ _ \/ / / // /   / __ \/ / _ \/ /_
+  / /___/ /  /  __/ /_/ // /___/ / / / /  __/ __/
+  \____/_/   \___/\__,_/ \____/_/ /_/_/\___/_/
+
+           🏁 G A R A G E 🏁
+
+         If you're not 1st, you're last
         """
