@@ -56,28 +56,31 @@ class ASCIIBanner(Widget):
 
     def render(self) -> Text:
         """Render the banner with optional subtitle."""
-        text = Text(self.BANNER_TEXT, style="bold cyan")
+        # Special handling for the new banner design with embedded subtitle
+        if "If you're not 1st" in self.BANNER_TEXT:
+            # Build centered banner with color-coded lines
+            lines = self.BANNER_TEXT.split("\n")
+            result = Text()
+            for line in lines:
+                # Center each line dynamically based on terminal width
+                centered_line = line.center(80)
+                if "If you're not 1st" in line:
+                    result.append(centered_line, style="bold yellow")
+                elif line.strip():  # Non-empty lines get cyan
+                    result.append(centered_line, style="bold cyan")
+                else:  # Empty lines stay empty
+                    result.append(line)
+                result.append("\n")
+            return result
 
+        # Standard banner rendering with optional subtitle
+        text = Text(self.BANNER_TEXT, style="bold cyan")
         if self.subtitle:
             text.append("\n")
-            # Add padding for right-alignment (approximate terminal width of 80)
             if self.subtitle_align == "right":
                 padding = " " * (80 - len(self.subtitle) - 2)
                 text.append(padding)
             text.append(self.subtitle, style="bold magenta")
-
-        # Special handling for the new banner design with embedded subtitle
-        if "If you're not 1st" in self.BANNER_TEXT:
-            # Return the banner text with the subtitle in yellow
-            lines = self.BANNER_TEXT.split("\n")
-            result = Text()
-            for line in lines:
-                if "If you're not 1st" in line:
-                    result.append(line, style="bold yellow")
-                else:
-                    result.append(line, style="bold cyan")
-                result.append("\n")
-            return result
 
         return text
 
@@ -111,10 +114,4 @@ class ASCIIBanner(Widget):
     @staticmethod
     def get_alt_banner_3() -> str:
         """Alternative banner design 3: ASCII CREWCHIEF GARAGE with subtitle."""
-        return r"""
-               ═══ C R E W C H I E F ═══
-
-                  🏁 G A R A G E 🏁
-
-             If you're not 1st, you're last
-        """
+        return "═══ C R E W C H I E F ═══\n\n🏁 G A R A G E 🏁\n\nIf you're not 1st, you're last"

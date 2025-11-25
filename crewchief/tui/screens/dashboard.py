@@ -102,7 +102,8 @@ class DashboardScreen(Screen):
 
     #stats-panel {
         width: 100%;
-        height: auto;
+        height: 1fr;
+        overflow: auto;
     }
 
     #right-panel {
