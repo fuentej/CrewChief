@@ -272,7 +272,8 @@ class DashboardScreen(Screen):
                         """Handle form submission."""
                         if form_data:
                             try:
-                                self.garage_service.update_vehicle(car_id, **form_data)
+                                car = Car(**form_data)
+                                self.garage_service.update_vehicle(car)
                                 self.notify("Vehicle updated", timeout=2)
                                 self.load_data()
                             except Exception as e:

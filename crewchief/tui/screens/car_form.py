@@ -139,23 +139,21 @@ class CarFormModal(BaseFormModal):
         )
         usage_type = UsageType(self.form_data["usage_type"])
 
-        # Build car object
+        # Build car object (convert empty strings to None for optional fields)
         car_data = {
             "year": year,
             "make": self.form_data["make"],
             "model": self.form_data["model"],
-            "trim": self.form_data.get("trim"),
-            "vin": self.form_data.get("vin"),
+            "trim": self.form_data.get("trim") or None,
+            "vin": self.form_data.get("vin") or None,
             "usage_type": usage_type,
             "current_odometer": odometer,
-            "nickname": self.form_data.get("nickname"),
-            "notes": self.form_data.get("notes"),
+            "nickname": self.form_data.get("nickname") or None,
+            "notes": self.form_data.get("notes") or None,
         }
 
-        # Preserve ID and timestamps if editing
+        # Preserve ID if editing (timestamps are managed by database layer)
         if self.car:
             car_data["id"] = self.car.id
-            car_data["created_at"] = self.car.created_at
-            car_data["updated_at"] = datetime.now()
 
         self.form_data = car_data
