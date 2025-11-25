@@ -73,18 +73,17 @@ class PartsFormModal(BaseFormModal):
         part_category = PartCategory(self.form_data["part_category"])
 
         # Build part object (car_id excluded as it shouldn't change during update)
+        # Convert empty strings to None for optional fields
         part_data = {
             "part_category": part_category,
-            "brand": self.form_data.get("brand"),
-            "part_number": self.form_data.get("part_number"),
-            "size_spec": self.form_data.get("size_spec"),
-            "notes": self.form_data.get("notes"),
+            "brand": self.form_data.get("brand") or None,
+            "part_number": self.form_data.get("part_number") or None,
+            "size_spec": self.form_data.get("size_spec") or None,
+            "notes": self.form_data.get("notes") or None,
         }
 
-        # Preserve ID if editing
+        # Preserve ID if editing (but not timestamps - those are managed by the database)
         if self.part:
             part_data["id"] = self.part.id
-            part_data["created_at"] = self.part.created_at
-            part_data["updated_at"] = self.part.updated_at
 
         self.form_data = part_data
