@@ -123,7 +123,7 @@ class DashboardScreen(Screen):
 
     def compose(self):
         """Compose dashboard layout."""
-        yield ASCIIBanner(id="banner")
+        yield ASCIIBanner(subtitle="THE GARAGE", subtitle_align="center", id="banner")
 
         with Container(id="main-content"):
             # Left panel: Vehicle list

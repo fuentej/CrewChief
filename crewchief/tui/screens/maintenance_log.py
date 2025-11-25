@@ -8,6 +8,7 @@ from textual.binding import Binding
 from crewchief.models import MaintenanceEvent
 from crewchief.tui.widgets.maintenance_table import MaintenanceTable
 from crewchief.tui.widgets.help_footer import HelpFooter
+from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.maintenance_service import MaintenanceService
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.maintenance_form import MaintenanceEventFormModal
@@ -91,6 +92,8 @@ class MaintenanceLogScreen(Screen):
 
     def compose(self):
         """Compose maintenance log layout."""
+        yield ASCIIBanner(subtitle="SERVICE RECORDS", id="banner")
+
         with Container(id="header"):
             yield Label("[ MAINTENANCE LOG ]", id="title")
 

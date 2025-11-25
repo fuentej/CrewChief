@@ -6,6 +6,7 @@ from textual.widgets import Static, Label
 from textual.binding import Binding
 
 from crewchief.tui.widgets.help_footer import HelpFooter
+from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.garage_service import GarageService
 
 
@@ -95,6 +96,8 @@ class CostsViewScreen(Screen):
 
     def compose(self):
         """Compose costs view layout."""
+        yield ASCIIBanner(subtitle="COST LEDGER", id="banner")
+
         with Container(id="header"):
             yield Label("[ COST ANALYSIS ]", id="title")
 
