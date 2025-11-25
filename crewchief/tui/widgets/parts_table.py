@@ -46,9 +46,9 @@ class PartsTable(DataTable):
         # Only set up columns on first population
         if not self.columns:
             self.setup_table()
-
-        # Clear existing rows (but keep headers)
-        self.clear(keep_columns=True)
+        else:
+            # Clear existing rows only
+            self.clear()
 
         for part in parts:
             self.add_row(

@@ -78,9 +78,9 @@ class VehicleTable(DataTable):
         # Only set up columns on first population
         if not self.columns:
             self.setup_table()
-
-        # Clear existing rows (but keep headers)
-        self.clear(keep_columns=True)
+        else:
+            # Clear existing rows only
+            self.clear()
 
         for car in vehicles:
             # Determine status based on due services
