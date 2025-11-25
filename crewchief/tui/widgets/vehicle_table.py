@@ -2,6 +2,7 @@
 
 from textual.widgets import DataTable
 from textual.binding import Binding
+from rich.text import Text
 from crewchief.models import Car
 from crewchief.tui.services.garage_service import GarageService
 
@@ -42,14 +43,14 @@ class VehicleTable(DataTable):
         """Set up table columns."""
         self.add_columns("ID", "Vehicle", "Usage", "Odometer", "Status")
 
-    def _determine_status(self, car: Car) -> str:
+    def _determine_status(self, car: Car) -> Text:
         """Determine vehicle status based on due services.
 
         Args:
             car: Car object to check status for.
 
         Returns:
-            Status string with symbol and label.
+            Rich Text object with colored status.
         """
         try:
             # Check for due services
@@ -58,13 +59,13 @@ class VehicleTable(DataTable):
                 due_services = vehicle_stats["due_services"]
                 has_overdue = any(service.get("is_due", False) for service in due_services)
                 if has_overdue:
-                    return "✗ OVERDUE"
+                    return Text("✗ OVERDUE", style="bold red")
                 else:
-                    return "⚠ DUE"
-            return "● OK"
+                    return Text("⚠ DUE", style="bold yellow")
+            return Text("● OK", style="bold green")
         except Exception:
             # Default status if service check fails
-            return "● OK"
+            return Text("● OK", style="bold green")
 
     def populate_vehicles(self, vehicles: list[Car]) -> None:
         """Populate table with vehicles.
