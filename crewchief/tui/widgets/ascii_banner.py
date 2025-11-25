@@ -60,10 +60,10 @@ class ASCIIBanner(Widget):
 
         if self.subtitle:
             text.append("\n")
-            subtitle_text = Text(self.subtitle, style="bold $secondary")
-            if self.subtitle_align == "center":
-                text.append(subtitle_text, style="bold $secondary")
-            else:  # right-justified
-                text.append(subtitle_text, style="bold $secondary")
+            # Add padding for right-alignment (approximate terminal width of 80)
+            if self.subtitle_align == "right":
+                padding = " " * (80 - len(self.subtitle) - 2)
+                text.append(padding)
+            text.append(self.subtitle, style="bold $secondary")
 
         return text
