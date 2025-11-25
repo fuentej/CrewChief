@@ -43,10 +43,8 @@ class MaintenanceTable(DataTable):
         """
         self.events = events
 
-        # Always clear everything (columns and rows)
+        # Clear existing rows and columns
         self.clear()
-        # Re-add columns
-        self.setup_table()
 
         for event in events:
             odometer_str = f"{event.odometer:,} mi" if event.odometer else "—"

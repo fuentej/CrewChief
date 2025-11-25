@@ -75,10 +75,8 @@ class VehicleTable(DataTable):
         """
         self.vehicles = vehicles
 
-        # Always clear everything (columns and rows)
+        # Clear existing rows and columns
         self.clear()
-        # Re-add columns
-        self.setup_table()
 
         for car in vehicles:
             # Determine status based on due services

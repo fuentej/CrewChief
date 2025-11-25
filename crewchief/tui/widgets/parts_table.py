@@ -43,10 +43,8 @@ class PartsTable(DataTable):
         """
         self.parts = parts
 
-        # Always clear everything (columns and rows)
+        # Clear existing rows and columns
         self.clear()
-        # Re-add columns
-        self.setup_table()
 
         for part in parts:
             self.add_row(
