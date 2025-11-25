@@ -46,17 +46,47 @@ class DashboardScreen(Screen):
         background: $panel;
     }
 
-    #left-panel > #vehicles-header {
+    #vehicles-section {
+        width: 100%;
+        height: 1fr;
+        layout: vertical;
+        border-bottom: solid $primary;
+        padding-bottom: 1;
+    }
+
+    #vehicles-section > #vehicles-header {
         width: 100%;
         height: 1;
         background: $boost;
         color: $secondary;
         text-style: bold;
+        margin-bottom: 1;
     }
 
     #vehicle-table {
         width: 100%;
         height: 1fr;
+    }
+
+    #status-section {
+        width: 100%;
+        height: auto;
+        layout: vertical;
+        padding: 1;
+    }
+
+    #status-section > #status-header {
+        width: 100%;
+        height: 1;
+        background: $boost;
+        color: $secondary;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #stats-panel {
+        width: 100%;
+        height: auto;
     }
 
     #right-panel {
@@ -67,35 +97,29 @@ class DashboardScreen(Screen):
         background: $panel;
     }
 
-    #stats-panel {
-        width: 100%;
-        height: auto;
-        margin: 1 0;
-    }
-
-    #recent-section {
+    #maintenance-section {
         width: 100%;
         height: 1fr;
-        border-top: solid $primary;
-        margin-top: 1;
-        padding-top: 1;
+        layout: vertical;
+        padding: 1;
     }
 
-    #recent-section > #recent-header {
+    #maintenance-section > #maintenance-header {
         width: 100%;
         height: 1;
         background: $boost;
         color: $secondary;
         text-style: bold;
+        margin-bottom: 1;
     }
 
-    #recent-events {
+    #maintenance-log {
         width: 100%;
         height: 1fr;
         overflow: auto;
     }
 
-    .recent-event {
+    .maintenance-entry {
         width: 100%;
         height: 1;
     }
@@ -126,18 +150,23 @@ class DashboardScreen(Screen):
         yield ASCIIBanner(subtitle="THE GARAGE", subtitle_align="center", id="banner")
 
         with Container(id="main-content"):
-            # Left panel: Vehicle list
+            # Left panel: Vehicle list and system status
             with Vertical(id="left-panel"):
-                yield Label("[ GARAGE FLEET ]", id="vehicles-header")
-                yield VehicleTable(id="vehicle-table")
+                # Vehicles section
+                with Vertical(id="vehicles-section"):
+                    yield Label("[ GARAGE FLEET ]", id="vehicles-header")
+                    yield VehicleTable(id="vehicle-table")
 
-            # Right panel: Stats and recent activity
+                # Status section
+                with Vertical(id="status-section"):
+                    yield Label("[ SYSTEM STATUS ]", id="status-header")
+                    yield StatsPanel(id="stats-panel")
+
+            # Right panel: Maintenance log for all cars
             with Vertical(id="right-panel"):
-                yield StatsPanel(title="SYSTEM STATUS", id="stats-panel")
-
-                with Vertical(id="recent-section"):
-                    yield Label("[ RECENT ACTIVITY ]", id="recent-header")
-                    yield Static(id="recent-events")
+                with Vertical(id="maintenance-section"):
+                    yield Label("[ MAINTENANCE LOG ]", id="maintenance-header")
+                    yield Static(id="maintenance-log")
 
         yield HelpFooter(
             help_text=" [N]ew  [V]iew  [E]dit  [D]elete  [C]osts  [A]I  [?]Help  [Q]uit",
@@ -169,19 +198,22 @@ class DashboardScreen(Screen):
             "Database": "● HEALTHY",
         })
 
-        # Load recent events
+        # Load maintenance log for all cars
         from crewchief.tui.services.maintenance_service import MaintenanceService
         maint_service = MaintenanceService()
-        recent = maint_service.get_recent_events(limit=5)
+        all_events = maint_service.get_recent_events(limit=1000)
 
-        events_text = ""
-        for event in recent:
-            car = self.garage_service.get_vehicle(event.car_id)
-            if car:
-                events_text += f"{event.service_date}  {car.display_name():<30} {event.service_type.value:<20} ${event.cost or 0:.2f}\n"
+        log_text = ""
+        if all_events:
+            for event in all_events:
+                car = self.garage_service.get_vehicle(event.car_id)
+                if car:
+                    log_text += f"{event.service_date}  {car.display_name():<25} {event.service_type.value:<15} ${event.cost or 0:.2f}\n"
+        else:
+            log_text = "No maintenance events yet."
 
-        self.recent_events = self.query_one("#recent-events", Static)
-        self.recent_events.update(events_text if events_text else "No maintenance events yet.")
+        maintenance_log = self.query_one("#maintenance-log", Static)
+        maintenance_log.update(log_text)
 
         maint_service.close()
 
