@@ -140,6 +140,7 @@ class MaintenanceLogScreen(Screen):
         # Load events
         events = self.maintenance_service.get_events_for_car(self.car_id)
         self.maintenance_table = self.query_one("#maintenance-table", MaintenanceTable)
+        self.maintenance_table.setup_table()
         self.maintenance_table.populate_events(events)
 
         self.detail_content = self.query_one("#detail-content", Static)

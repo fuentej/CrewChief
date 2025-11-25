@@ -140,6 +140,7 @@ class PartsManagerScreen(Screen):
         # Load parts
         parts = self.parts_service.get_parts_for_car(self.car_id)
         self.parts_table = self.query_one("#parts-table", PartsTable)
+        self.parts_table.setup_table()
         self.parts_table.populate_parts(parts)
 
         self.detail_content = self.query_one("#detail-content", Static)

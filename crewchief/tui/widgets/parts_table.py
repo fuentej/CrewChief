@@ -43,12 +43,10 @@ class PartsTable(DataTable):
         """
         self.parts = parts
 
-        # Only set up columns on first population
-        if not self.columns:
-            self.setup_table()
-        else:
-            # Clear existing rows only
-            self.clear()
+        # Always clear everything (columns and rows)
+        self.clear()
+        # Re-add columns
+        self.setup_table()
 
         for part in parts:
             self.add_row(

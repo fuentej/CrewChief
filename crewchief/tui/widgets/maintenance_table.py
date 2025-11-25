@@ -43,12 +43,10 @@ class MaintenanceTable(DataTable):
         """
         self.events = events
 
-        # Only set up columns on first population
-        if not self.columns:
-            self.setup_table()
-        else:
-            # Clear existing rows only
-            self.clear()
+        # Always clear everything (columns and rows)
+        self.clear()
+        # Re-add columns
+        self.setup_table()
 
         for event in events:
             odometer_str = f"{event.odometer:,} mi" if event.odometer else "—"

@@ -203,6 +203,7 @@ class DashboardScreen(Screen):
         vehicles = self.garage_service.get_all_vehicles()
 
         self.vehicle_table = self.query_one("#vehicle-table", VehicleTable)
+        self.vehicle_table.setup_table()
         self.vehicle_table.populate_vehicles(vehicles)
 
         # Load stats
