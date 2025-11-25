@@ -87,26 +87,35 @@ class MaintenanceEventFormModal(BaseFormModal):
 
         # Validate service_date format
         try:
-            date.fromisoformat(self.input_widgets["service_date"].value)
+            service_date_widget = self.query_one("#field-service_date")
+            date.fromisoformat(service_date_widget.value)
         except ValueError:
             self.show_error("Invalid date format (use YYYY-MM-DD)")
             return False
+        except Exception:
+            return False
 
         # Validate odometer if provided
-        if self.input_widgets["odometer"].value:
-            try:
-                int(self.input_widgets["odometer"].value)
-            except ValueError:
-                self.show_error("Odometer must be a number")
-                return False
+        try:
+            odometer_widget = self.query_one("#field-odometer")
+            if odometer_widget.value:
+                int(odometer_widget.value)
+        except ValueError:
+            self.show_error("Odometer must be a number")
+            return False
+        except Exception:
+            pass
 
         # Validate cost if provided
-        if self.input_widgets["cost"].value:
-            try:
-                float(self.input_widgets["cost"].value)
-            except ValueError:
-                self.show_error("Cost must be a valid number")
-                return False
+        try:
+            cost_widget = self.query_one("#field-cost")
+            if cost_widget.value:
+                float(cost_widget.value)
+        except ValueError:
+            self.show_error("Cost must be a valid number")
+            return False
+        except Exception:
+            pass
 
         return True
 

@@ -99,33 +99,30 @@ class CarFormModal(BaseFormModal):
 
         # Validate year is a number between 1900 and 2100
         try:
-            year = int(self.form_data["year"])
+            year_widget = self.query_one("#field-year")
+            year = int(year_widget.value)
             if year < 1900 or year > 2100:
                 self.show_error("Year must be between 1900 and 2100")
                 return False
         except ValueError:
             self.show_error("Year must be a valid number")
             return False
+        except Exception:
+            return False
 
         # Validate odometer if provided
-        if self.form_data.get("current_odometer"):
-            try:
-                odometer = int(self.form_data["current_odometer"])
+        try:
+            odometer_widget = self.query_one("#field-current_odometer")
+            if odometer_widget.value:
+                odometer = int(odometer_widget.value)
                 if odometer < 0:
                     self.show_error("Odometer cannot be negative")
                     return False
-            except ValueError:
-                self.show_error("Odometer must be a valid number")
-                return False
-
-        # Validate make, model are not empty
-        if not self.form_data.get("make", "").strip():
-            self.show_error("Make is required")
+        except ValueError:
+            self.show_error("Odometer must be a valid number")
             return False
-
-        if not self.form_data.get("model", "").strip():
-            self.show_error("Model is required")
-            return False
+        except Exception:
+            pass
 
         return True
 
