@@ -18,12 +18,11 @@ class ASCIIBanner(Widget):
 
     # Rotating motivational phrases
     MOTIVATIONAL_PHRASES = [
+        "If you're not first, you're last!",
+        "All your base are below to us",
         "First or last, that's racing",
         "Second place is first loser",
-        "Win or go home",
         "No participation trophies",
-        "P1 or nothing",
-        "Last place is first to leave",
         "Victory is the only option",
         "Dominate or don't show up",
     ]
