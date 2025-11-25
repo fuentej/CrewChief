@@ -158,14 +158,6 @@ class BaseFormModal(ModalScreen):
                             )
                             yield select
                             self.select_widgets[field.name] = select
-                        elif field.field_type == "textarea":
-                            input_widget = Input(
-                                id=f"{field.name}",
-                                classes="form-textarea",
-                                multiline=True,
-                            )
-                            yield input_widget
-                            self.input_widgets[field.name] = input_widget
                         else:
                             input_type = "text"
                             if field.field_type == "number":
@@ -173,10 +165,11 @@ class BaseFormModal(ModalScreen):
                             elif field.field_type == "date":
                                 input_type = "text"
 
+                            css_class = "form-textarea" if field.field_type == "textarea" else "form-input"
                             input_widget = Input(
                                 id=f"{field.name}",
                                 placeholder=f"{field.label}...",
-                                classes="form-input",
+                                classes=css_class,
                                 type=input_type,
                             )
                             yield input_widget
