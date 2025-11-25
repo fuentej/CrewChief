@@ -165,17 +165,9 @@ class PartsManagerScreen(Screen):
 
     def action_view_part(self) -> None:
         """View selected part details."""
-        if self.parts_table:
-            part = self.parts_table.get_selected_part()
-            if part:
-                detail_text = (
-                    f"Category: {part.part_category.value.replace('_', ' ').title()}\n"
-                    f"Brand: {part.brand or '—'}\n"
-                    f"Part Number: {part.part_number or '—'}\n"
-                    f"Size/Spec: {part.size_spec or '—'}\n\n"
-                    f"Notes: {part.notes or 'No notes'}"
-                )
-                self.notify(detail_text, timeout=5)
+        # Part details are already shown in the detail pane below the table
+        # This action is kept for completeness but doesn't need to do anything
+        pass
 
     def action_new_part(self) -> None:
         """Add a new part to the profile."""
