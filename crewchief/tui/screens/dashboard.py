@@ -5,6 +5,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Static, Label
 from textual.binding import Binding
 
+from crewchief.models import Car
 from crewchief.tui.widgets import ASCIIBanner
 from crewchief.tui.widgets.vehicle_table import VehicleTable
 from crewchief.tui.widgets.stats_panel import StatsPanel
@@ -13,6 +14,7 @@ from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.vehicle_detail import VehicleDetailScreen
 from crewchief.tui.screens.costs_view import CostsViewScreen
 from crewchief.tui.screens.ai_panel import AIPanelScreen
+from crewchief.tui.screens.modals import ConfirmDeleteModal
 
 
 class DashboardScreen(Screen):
@@ -99,11 +101,14 @@ class DashboardScreen(Screen):
     """
 
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("?", "help", "Help"),
-        Binding("v", "view_vehicle", "View Vehicle"),
+        Binding("n", "new_vehicle", "New Car"),
+        Binding("v", "view_vehicle", "View Car"),
+        Binding("e", "edit_vehicle", "Edit Car"),
+        Binding("d", "delete_vehicle", "Delete Car"),
         Binding("c", "view_costs", "Costs"),
         Binding("a", "view_ai", "AI Insights"),
+        Binding("?", "help", "Help"),
+        Binding("q", "quit", "Quit"),
     ]
 
     def __init__(self, **kwargs):
@@ -134,7 +139,7 @@ class DashboardScreen(Screen):
                     yield Static(id="recent-events")
 
         yield HelpFooter(
-            help_text=" [V]iew Vehicle  [C]osts  [A]I Insights  [?]Help  [Q]uit",
+            help_text=" [N]ew  [V]iew  [E]dit  [D]elete  [C]osts  [A]I  [?]Help  [Q]uit",
             id="help-footer",
         )
 
@@ -179,12 +184,48 @@ class DashboardScreen(Screen):
 
         maint_service.close()
 
+    def action_new_vehicle(self) -> None:
+        """Create a new vehicle."""
+        self.notify("Add car form - coming soon", timeout=2)
+
     def action_view_vehicle(self) -> None:
         """View selected vehicle details."""
         if self.vehicle_table:
             car_id = self.vehicle_table.get_selected_car_id()
             if car_id:
                 self.app.push_screen(VehicleDetailScreen(car_id=car_id))
+
+    def action_edit_vehicle(self) -> None:
+        """Edit selected vehicle."""
+        if self.vehicle_table:
+            car_id = self.vehicle_table.get_selected_car_id()
+            if car_id:
+                self.notify("Edit car form - coming soon", timeout=2)
+
+    def action_delete_vehicle(self) -> None:
+        """Delete selected vehicle."""
+        if self.vehicle_table:
+            car_id = self.vehicle_table.get_selected_car_id()
+            if car_id:
+                car = self.garage_service.get_vehicle(car_id)
+                if car:
+                    def handle_confirm(confirmed: bool) -> None:
+                        """Handle delete confirmation."""
+                        if confirmed:
+                            try:
+                                self.garage_service.delete_vehicle(car_id)
+                                self.notify(f"Deleted {car.display_name()}", timeout=2)
+                                self.load_data()
+                            except Exception as e:
+                                self.notify(f"Error deleting vehicle: {str(e)}", timeout=3)
+
+                    self.app.push_screen(
+                        ConfirmDeleteModal(
+                            "Delete Vehicle",
+                            f"Delete {car.display_name()}?\nThis cannot be undone.",
+                        ),
+                        callback=handle_confirm,
+                    )
 
     def action_view_costs(self) -> None:
         """View cost analytics for all vehicles."""

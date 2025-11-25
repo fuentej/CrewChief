@@ -113,13 +113,14 @@ class VehicleDetailScreen(Screen):
     """
 
     BINDINGS = [
-        Binding("escape", "back", "Back"),
+        Binding("v", "view_details", "View Car"),
         Binding("l", "view_log", "View Log"),
-        Binding("p", "view_parts", "Parts"),
+        Binding("p", "view_parts", "View Parts"),
         Binding("c", "view_costs", "Costs"),
         Binding("a", "view_ai", "AI Insights"),
-        Binding("enter", "view_event", "View"),
+        Binding("enter", "view_event", "View Event"),
         Binding("?", "help", "Help"),
+        Binding("escape", "back", "Back"),
     ]
 
     def __init__(self, car_id: int, **kwargs):
@@ -218,6 +219,23 @@ class VehicleDetailScreen(Screen):
     def action_back(self) -> None:
         """Go back to dashboard."""
         self.app.pop_screen()
+
+    def action_view_details(self) -> None:
+        """View detailed car information."""
+        if self.car:
+            info = f"""
+{self.car.display_name()}
+
+Year: {self.car.year}
+Make: {self.car.make}
+Model: {self.car.model}
+Trim: {self.car.trim or "—"}
+VIN: {self.car.vin or "—"}
+Usage: {self.car.usage_type.value}
+Odometer: {self.car.current_odometer:,} mi
+Notes: {self.car.notes or "—"}
+            """
+            self.notify(info, timeout=5)
 
     def action_view_log(self) -> None:
         """Open full maintenance log for this vehicle."""

@@ -68,11 +68,12 @@ class MaintenanceLogScreen(Screen):
     """
 
     BINDINGS = [
-        Binding("escape", "back", "Back"),
+        Binding("v", "view_entry", "View Entry"),
         Binding("n", "new_entry", "New Entry"),
         Binding("e", "edit_entry", "Edit"),
         Binding("d", "delete_entry", "Delete"),
         Binding("?", "help", "Help"),
+        Binding("escape", "back", "Back"),
     ]
 
     def __init__(self, car_id: int, **kwargs):
@@ -144,6 +145,20 @@ class MaintenanceLogScreen(Screen):
     def action_back(self) -> None:
         """Go back to previous screen."""
         self.app.pop_screen()
+
+    def action_view_entry(self) -> None:
+        """View selected maintenance entry details."""
+        if self.maintenance_table:
+            event = self.maintenance_table.get_selected_event()
+            if event:
+                detail_text = (
+                    f"Date: {event.service_date}  |  Type: {event.service_type.value.replace('_', ' ').title()}\n"
+                    f"Odometer: {event.odometer or '—'} mi  |  Cost: ${event.cost or 0:.2f}\n"
+                    f"Location: {event.location or '—'}\n\n"
+                    f"Description:\n{event.description or 'No description'}\n\n"
+                    f"Parts: {event.parts or 'No parts recorded'}"
+                )
+                self.notify(detail_text, timeout=5)
 
     def action_new_entry(self) -> None:
         """Create a new maintenance entry."""
