@@ -183,7 +183,7 @@ class PartsManagerScreen(Screen):
                     f"Size/Spec: {part.size_spec or '—'}\n\n"
                     f"Notes: {part.notes or 'No notes'}"
                 )
-                self._current_notification = self.notify(detail_text, timeout=0)
+                self._current_notification = self.notify(detail_text, timeout=30)
 
     def action_new_part(self) -> None:
         """Add a new part to the profile."""
