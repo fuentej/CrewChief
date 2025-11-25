@@ -205,7 +205,6 @@ class VehicleDetailScreen(Screen):
 
         # Load maintenance history
         self.maintenance_table = self.query_one("#maintenance-table", MaintenanceTable)
-        self.maintenance_table.setup_table()
         self.maintenance_table.populate_events(events)
 
         # Load due services

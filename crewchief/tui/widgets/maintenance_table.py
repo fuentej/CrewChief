@@ -42,7 +42,13 @@ class MaintenanceTable(DataTable):
             events: List of MaintenanceEvent objects to display.
         """
         self.events = events
-        self.clear()
+
+        # Only set up columns on first population
+        if not self.columns:
+            self.setup_table()
+
+        # Clear existing rows (but keep headers)
+        self.clear(keep_columns=True)
 
         for event in events:
             odometer_str = f"{event.odometer:,} mi" if event.odometer else "—"

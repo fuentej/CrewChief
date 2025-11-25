@@ -74,7 +74,13 @@ class VehicleTable(DataTable):
             vehicles: List of Car objects to display.
         """
         self.vehicles = vehicles
-        self.clear()
+
+        # Only set up columns on first population
+        if not self.columns:
+            self.setup_table()
+
+        # Clear existing rows (but keep headers)
+        self.clear(keep_columns=True)
 
         for car in vehicles:
             # Determine status based on due services

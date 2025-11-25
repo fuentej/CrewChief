@@ -42,7 +42,13 @@ class PartsTable(DataTable):
             parts: List of CarPart objects to display.
         """
         self.parts = parts
-        self.clear()
+
+        # Only set up columns on first population
+        if not self.columns:
+            self.setup_table()
+
+        # Clear existing rows (but keep headers)
+        self.clear(keep_columns=True)
 
         for part in parts:
             self.add_row(
