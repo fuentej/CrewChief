@@ -8,6 +8,7 @@ from textual.binding import Binding
 from crewchief.models import CarPart
 from crewchief.tui.widgets.parts_table import PartsTable
 from crewchief.tui.widgets.help_footer import HelpFooter
+from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.parts_service import PartsService
 from crewchief.tui.services.garage_service import GarageService
 from crewchief.tui.screens.parts_form import PartsFormModal
@@ -28,6 +29,12 @@ class PartsManagerScreen(Screen):
         border: solid $primary;
         background: $boost;
         padding: 1;
+        layout: horizontal;
+    }
+
+    #title-section {
+        width: 50%;
+        height: auto;
     }
 
     #title {
@@ -36,6 +43,12 @@ class PartsManagerScreen(Screen):
         color: $secondary;
         text-style: bold;
         margin-bottom: 1;
+    }
+
+    #header-banner {
+        width: 50%;
+        height: auto;
+        align: right middle;
     }
 
     #parts-table {
@@ -92,7 +105,11 @@ class PartsManagerScreen(Screen):
     def compose(self):
         """Compose parts manager layout."""
         with Container(id="header"):
-            yield Label("[ PARTS PROFILE ]", id="title")
+            with Container(id="title-section"):
+                yield Label("[ PARTS PROFILE ]", id="title")
+
+            with Container(id="header-banner"):
+                yield ASCIIBanner(subtitle="THE PARTS SHELF", subtitle_align="center")
 
         yield PartsTable(id="parts-table")
 
@@ -116,12 +133,9 @@ class PartsManagerScreen(Screen):
             self.dismiss()
             return
 
-        # Update title with page name right-justified
+        # Update title with car name
         title = self.query_one("#title", Label)
-        parts_text = f"[ PARTS PROFILE: {car.display_name()} ]"
-        page_title = "THE PARTS SHELF"
-        padding = " " * (70 - len(parts_text) - len(page_title))
-        title.update(f"{parts_text}{padding}{page_title}")
+        title.update(f"[ PARTS PROFILE: {car.display_name()} ]")
 
         # Load parts
         parts = self.parts_service.get_parts_for_car(self.car_id)

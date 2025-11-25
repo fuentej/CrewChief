@@ -6,6 +6,7 @@ from textual.widgets import Static, Label, Button
 from textual.binding import Binding
 
 from crewchief.tui.widgets.help_footer import HelpFooter
+from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.ai_service import AIService
 from crewchief.tui.services.garage_service import GarageService
 
@@ -24,6 +25,12 @@ class AIPanelScreen(Screen):
         border: solid $primary;
         background: $boost;
         padding: 1;
+        layout: horizontal;
+    }
+
+    #title-section {
+        width: 50%;
+        height: auto;
     }
 
     #title {
@@ -31,6 +38,12 @@ class AIPanelScreen(Screen):
         height: 1;
         color: $secondary;
         text-style: bold;
+    }
+
+    #header-banner {
+        width: 50%;
+        height: auto;
+        align: right middle;
     }
 
     #content-area {
@@ -101,7 +114,11 @@ class AIPanelScreen(Screen):
     def compose(self):
         """Compose AI panel layout."""
         with Container(id="header"):
-            yield Label("[ AI INSIGHTS ]", id="title")
+            with Container(id="title-section"):
+                yield Label("[ AI INSIGHTS ]", id="title")
+
+            with Container(id="header-banner"):
+                yield ASCIIBanner(subtitle="AI ADVISOR", subtitle_align="center")
 
         with Container(id="content-area"):
             # Garage Summary
@@ -128,20 +145,16 @@ class AIPanelScreen(Screen):
 
     def load_ai_data(self) -> None:
         """Load and display AI insights."""
-        # Update title with page name right-justified
+        # Update title with car name if available
         title = self.query_one("#title", Label)
         if self.car_id:
             car = self.garage_service.get_vehicle(self.car_id)
             if car:
-                ai_text = f"[ AI INSIGHTS: {car.display_name()} ]"
+                title.update(f"[ AI INSIGHTS: {car.display_name()} ]")
             else:
-                ai_text = "[ AI INSIGHTS ]"
+                title.update("[ AI INSIGHTS ]")
         else:
-            ai_text = "[ AI INSIGHTS ]"
-
-        page_title = "AI ADVISOR"
-        padding = " " * (70 - len(ai_text) - len(page_title))
-        title.update(f"{ai_text}{padding}{page_title}")
+            title.update("[ AI INSIGHTS ]")
 
         sections = self.query(".ai-section")
 

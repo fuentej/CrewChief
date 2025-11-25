@@ -6,6 +6,7 @@ from textual.widgets import Static, Label
 from textual.binding import Binding
 
 from crewchief.tui.widgets.help_footer import HelpFooter
+from crewchief.tui.widgets.ascii_banner import ASCIIBanner
 from crewchief.tui.services.garage_service import GarageService
 
 
@@ -23,6 +24,12 @@ class CostsViewScreen(Screen):
         border: solid $primary;
         background: $boost;
         padding: 1;
+        layout: horizontal;
+    }
+
+    #title-section {
+        width: 50%;
+        height: auto;
     }
 
     #title {
@@ -30,6 +37,12 @@ class CostsViewScreen(Screen):
         height: 1;
         color: $secondary;
         text-style: bold;
+    }
+
+    #header-banner {
+        width: 50%;
+        height: auto;
+        align: right middle;
     }
 
     #content-area {
@@ -96,7 +109,11 @@ class CostsViewScreen(Screen):
     def compose(self):
         """Compose costs view layout."""
         with Container(id="header"):
-            yield Label("[ COST ANALYSIS ]", id="title")
+            with Container(id="title-section"):
+                yield Label("[ COST ANALYSIS ]", id="title")
+
+            with Container(id="header-banner"):
+                yield ASCIIBanner(subtitle="COST LEDGER", subtitle_align="center")
 
         with Container(id="content-area"):
             # Left panel: Cost by vehicle
@@ -137,12 +154,9 @@ class CostsViewScreen(Screen):
             self.dismiss()
             return
 
-        # Update title with page name right-justified
+        # Update title with car name
         title = self.query_one("#title", Label)
-        cost_text = f"[ COST ANALYSIS: {car.display_name()} ]"
-        page_title = "COST LEDGER"
-        padding = " " * (70 - len(cost_text) - len(page_title))
-        title.update(f"{cost_text}{padding}{page_title}")
+        title.update(f"[ COST ANALYSIS: {car.display_name()} ]")
 
         # Get cost data from repository
         costs = self.garage_service.repo.get_maintenance_costs(self.car_id)
