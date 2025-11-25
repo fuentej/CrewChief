@@ -28,8 +28,8 @@ class SectionHeader(Static):
         self.title = title
 
     def render(self) -> Text:
-        """Render the header text."""
-        return Text(self.title, style="bold $secondary")
+        """Render the header text with high contrast."""
+        return Text(self.title, style="bold white on $boost")
 
 
 class DashboardScreen(Screen):
@@ -87,6 +87,8 @@ class DashboardScreen(Screen):
         height: 40%;
         layout: vertical;
         padding: 1;
+        background: $panel;
+        border-top: solid $primary;
     }
 
     #status-section > #status-header {
@@ -217,14 +219,16 @@ class DashboardScreen(Screen):
         maint_service = MaintenanceService()
         all_events = maint_service.get_recent_events(limit=1000)
 
-        log_text = ""
+        log_text = "Date         Vehicle                  Type            Cost\n"
+        log_text += "─" * 70 + "\n"
+
         if all_events:
             for event in all_events:
                 car = self.garage_service.get_vehicle(event.car_id)
                 if car:
                     log_text += f"{event.service_date}  {car.display_name():<25} {event.service_type.value:<15} ${event.cost or 0:.2f}\n"
         else:
-            log_text = "No maintenance events yet."
+            log_text += "No maintenance events yet."
 
         maintenance_log = self.query_one("#maintenance-log", Static)
         maintenance_log.update(log_text)
