@@ -226,8 +226,8 @@ class BaseFormModal(ModalScreen):
                     if widget.value is not None:
                         self.form_data[field.name] = str(widget.value)
                 elif isinstance(widget, OptionList):
-                    selected = widget.selected_index
-                    if selected is not None:
+                    selected = widget.selected_indices
+                    if selected:
                         self.form_data[field.name] = [str(idx) for idx in selected]
             except Exception:
                 pass
@@ -249,7 +249,7 @@ class BaseFormModal(ModalScreen):
                         if widget.value is None:
                             return False
                     elif isinstance(widget, OptionList):
-                        if not widget.selected_index:
+                        if not widget.selected_indices:
                             return False
                 except Exception:
                     return False
