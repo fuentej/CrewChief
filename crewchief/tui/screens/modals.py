@@ -2,7 +2,7 @@
 
 from textual.screen import ModalScreen
 from textual.containers import Container, Vertical, Horizontal
-from textual.widgets import Static, Label, Input, Button, Select
+from textual.widgets import Static, Label, Input, Button, Select, OptionList
 from textual.binding import Binding
 from enum import Enum
 from datetime import date
@@ -18,17 +18,17 @@ class FormField:
         field_type: str = "text",
         required: bool = True,
         options: list[tuple[str, str]] | None = None,
-        default: str | None = None,
+        default: str | list[str] | None = None,
     ):
         """Initialize form field.
 
         Args:
             name: Field identifier
             label: Display label
-            field_type: 'text', 'number', 'date', 'select', 'textarea'
+            field_type: 'text', 'number', 'date', 'select', 'textarea', 'multiselect'
             required: Whether field must have a value
             options: For select fields, list of (value, label) tuples
-            default: Default value
+            default: Default value (str for single fields, list for multiselect)
         """
         self.name = name
         self.label = label
@@ -36,7 +36,7 @@ class FormField:
         self.required = required
         self.options = options or []
         self.default = default
-        self.value: str | None = default
+        self.value: str | list[str] | None = default
 
 
 class BaseFormModal(ModalScreen):
@@ -157,6 +157,12 @@ class BaseFormModal(ModalScreen):
                                 id=f"field-{field.name}",
                                 classes="form-select",
                             )
+                        elif field.field_type == "multiselect" and field.options:
+                            yield OptionList(
+                                *[(str(l), str(v)) for v, l in field.options],
+                                id=f"field-{field.name}",
+                                classes="form-select",
+                            )
                         else:
                             css_class = "form-textarea" if field.field_type == "textarea" else "form-input"
                             yield Input(
@@ -180,6 +186,12 @@ class BaseFormModal(ModalScreen):
                         widget.value = field.default
                     elif isinstance(widget, Select) and field.default:
                         widget.value = field.default
+                    elif isinstance(widget, OptionList) and isinstance(field.default, list):
+                        for idx, default_val in enumerate(field.default):
+                            try:
+                                widget.select(int(default_val))
+                            except (ValueError, IndexError):
+                                pass
                 except Exception:
                     pass
 
@@ -213,6 +225,10 @@ class BaseFormModal(ModalScreen):
                 elif isinstance(widget, Select):
                     if widget.value is not None:
                         self.form_data[field.name] = str(widget.value)
+                elif isinstance(widget, OptionList):
+                    selected = widget.selected_index
+                    if selected is not None:
+                        self.form_data[field.name] = [str(idx) for idx in selected]
             except Exception:
                 pass
 
@@ -231,6 +247,9 @@ class BaseFormModal(ModalScreen):
                             return False
                     elif isinstance(widget, Select):
                         if widget.value is None:
+                            return False
+                    elif isinstance(widget, OptionList):
+                        if not widget.selected_index:
                             return False
                 except Exception:
                     return False

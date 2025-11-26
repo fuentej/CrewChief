@@ -3,6 +3,7 @@
 from datetime import date
 from crewchief.models import MaintenanceEvent, ServiceType
 from crewchief.tui.screens.modals import BaseFormModal, FormField
+from crewchief.tui.services.parts_service import PartsService
 
 
 class MaintenanceEventFormModal(BaseFormModal):
@@ -19,6 +20,14 @@ class MaintenanceEventFormModal(BaseFormModal):
         self.car_id = car_id
         self.event = event
         self.is_new = event is None
+        self.parts_service = PartsService()
+
+        # Get available parts for this car
+        available_parts = self.parts_service.get_parts_for_car(car_id)
+        part_options = [
+            (str(part.id), f"{part.brand or part.part_category.value} - {part.part_number or 'N/A'}")
+            for part in available_parts
+        ]
 
         # Build fields
         fields = [
@@ -64,9 +73,10 @@ class MaintenanceEventFormModal(BaseFormModal):
             FormField(
                 "parts",
                 "Parts Used",
-                field_type="text",
+                field_type="multiselect",
                 required=False,
-                default=event.parts or "" if event else "",
+                options=part_options,
+                default=(event.parts or "").split(",") if event and event.parts else [],
             ),
             FormField(
                 "description",
@@ -133,6 +143,13 @@ class MaintenanceEventFormModal(BaseFormModal):
         )
         cost = float(self.form_data["cost"]) if self.form_data.get("cost") else None
 
+        # Convert parts list to comma-separated string
+        parts_list = self.form_data.get("parts")
+        if isinstance(parts_list, list) and parts_list:
+            parts_str = ",".join(parts_list)
+        else:
+            parts_str = None
+
         # Build event object
         event_data = {
             "car_id": self.car_id,
@@ -141,7 +158,7 @@ class MaintenanceEventFormModal(BaseFormModal):
             "odometer": odometer,
             "cost": cost,
             "location": self.form_data.get("location") or None,
-            "parts": self.form_data.get("parts") or None,
+            "parts": parts_str,
             "description": self.form_data.get("description") or None,
         }
 
@@ -150,3 +167,7 @@ class MaintenanceEventFormModal(BaseFormModal):
             event_data["id"] = self.event.id
 
         self.form_data = event_data
+
+    def on_unmount(self) -> None:
+        """Clean up when leaving form."""
+        self.parts_service.close()
