@@ -133,18 +133,19 @@ class MaintenanceEventFormModal(BaseFormModal):
         )
         cost = float(self.form_data["cost"]) if self.form_data.get("cost") else None
 
-        # Build event object (car_id excluded as it shouldn't change during update)
+        # Build event object
         event_data = {
+            "car_id": self.car_id,
             "service_date": service_date,
             "service_type": service_type,
             "odometer": odometer,
             "cost": cost,
-            "location": self.form_data.get("location"),
-            "parts": self.form_data.get("parts"),
-            "description": self.form_data.get("description"),
+            "location": self.form_data.get("location") or None,
+            "parts": self.form_data.get("parts") or None,
+            "description": self.form_data.get("description") or None,
         }
 
-        # Preserve ID and created_at if editing (but don't update them)
+        # Preserve ID if editing
         if self.event:
             event_data["id"] = self.event.id
 
