@@ -184,7 +184,7 @@ class BaseFormModal(ModalScreen):
                     widget = self.query_one(f"#field-{field.name}")
                     if isinstance(widget, Input):
                         widget.value = field.default
-                    elif isinstance(widget, Select) and field.default:
+                    elif isinstance(widget, Select) and field.default is not None:
                         widget.value = field.default
                     elif isinstance(widget, SelectionList) and isinstance(field.default, list):
                         for default_val in field.default:
