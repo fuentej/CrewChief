@@ -250,7 +250,7 @@ class DashboardScreen(Screen):
                     self.notify("Vehicle added to garage", timeout=2)
                     self.load_data()
                 except Exception as e:
-                    self.notify(f"Error adding vehicle: {str(e)}", timeout=3)
+                    self.notify("Error adding vehicle", timeout=3)
 
         self.app.push_screen(CarFormModal(), callback=handle_form_result)
 
@@ -277,7 +277,7 @@ class DashboardScreen(Screen):
                                 self.notify("Vehicle updated", timeout=2)
                                 self.load_data()
                             except Exception as e:
-                                self.notify(f"Error updating vehicle: {str(e)}", timeout=3)
+                                self.notify("Error updating vehicle", timeout=3)
 
                     self.app.push_screen(
                         CarFormModal(car),
@@ -299,7 +299,7 @@ class DashboardScreen(Screen):
                                 self.notify(f"Deleted {car.display_name()}", timeout=2)
                                 self.load_data()
                             except Exception as e:
-                                self.notify(f"Error deleting vehicle: {str(e)}", timeout=3)
+                                self.notify("Error deleting vehicle", timeout=3)
 
                     self.app.push_screen(
                         ConfirmDeleteModal(

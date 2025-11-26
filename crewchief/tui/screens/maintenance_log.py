@@ -188,7 +188,7 @@ class MaintenanceLogScreen(Screen):
                     self.notify("Maintenance entry added", timeout=2)
                     self.load_maintenance_data()
                 except Exception as e:
-                    self.notify(f"Error adding entry: {str(e)}", timeout=3)
+                    self.notify("Error adding entry", timeout=3)
 
         self.app.push_screen(
             MaintenanceEventFormModal(self.car_id),
@@ -212,9 +212,7 @@ class MaintenanceLogScreen(Screen):
                             else:
                                 self.notify("Failed to update entry", timeout=3)
                         except Exception as e:
-                            import traceback
-                            self.notify(f"Error updating entry: {str(e)}", timeout=3)
-                            traceback.print_exc()
+                            self.notify("Error updating entry", timeout=3)
 
                 self.app.push_screen(
                     MaintenanceEventFormModal(self.car_id, event),
@@ -234,7 +232,7 @@ class MaintenanceLogScreen(Screen):
                             self.notify("Maintenance entry deleted", timeout=2)
                             self.load_maintenance_data()
                         except Exception as e:
-                            self.notify(f"Error deleting entry: {str(e)}", timeout=3)
+                            self.notify("Error deleting entry", timeout=3)
 
                 self.app.push_screen(
                     ConfirmDeleteModal(

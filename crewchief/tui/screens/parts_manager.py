@@ -188,7 +188,7 @@ class PartsManagerScreen(Screen):
                     self.notify("Part added to profile", timeout=2)
                     self.load_parts_data()
                 except Exception as e:
-                    self.notify(f"Error adding part: {str(e)}", timeout=3)
+                    self.notify("Error adding part", timeout=3)
 
         self.app.push_screen(
             PartsFormModal(self.car_id),
@@ -209,7 +209,7 @@ class PartsManagerScreen(Screen):
                             self.notify("Part updated", timeout=2)
                             self.load_parts_data()
                         except Exception as e:
-                            self.notify(f"Error updating part: {str(e)}", timeout=3)
+                            self.notify("Error updating part", timeout=3)
 
                 self.app.push_screen(
                     PartsFormModal(self.car_id, part),
@@ -229,7 +229,7 @@ class PartsManagerScreen(Screen):
                             self.notify("Part deleted", timeout=2)
                             self.load_parts_data()
                         except Exception as e:
-                            self.notify(f"Error deleting part: {str(e)}", timeout=3)
+                            self.notify("Error deleting part", timeout=3)
 
                 self.app.push_screen(
                     ConfirmDeleteModal(
