@@ -246,7 +246,7 @@ class BaseFormModal(ModalScreen):
                         if not widget.value.strip():
                             return False
                     elif isinstance(widget, Select):
-                        if widget.value is None:
+                        if widget.value is None or str(widget.value) == "":
                             return False
                     elif isinstance(widget, SelectionList):
                         if not widget.selected:
