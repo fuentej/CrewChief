@@ -135,7 +135,11 @@ class MaintenanceEventFormModal(BaseFormModal):
 
         # Convert string values to proper types
         service_date = date.fromisoformat(self.form_data["service_date"])
-        service_type = ServiceType(self.form_data["service_type"])
+        service_type_value = self.form_data.get("service_type")
+        if not service_type_value or service_type_value == "":
+            self.show_error("Service Type is required")
+            return
+        service_type = ServiceType(service_type_value)
         odometer = (
             int(self.form_data["odometer"])
             if self.form_data.get("odometer")
