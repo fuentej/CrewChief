@@ -2,7 +2,7 @@
 
 from textual.screen import ModalScreen
 from textual.containers import Container, Vertical, Horizontal
-from textual.widgets import Static, Label, Input, Button, Select, OptionList
+from textual.widgets import Static, Label, Input, Button, Select, SelectionList
 from textual.binding import Binding
 from enum import Enum
 from datetime import date
@@ -158,8 +158,8 @@ class BaseFormModal(ModalScreen):
                                 classes="form-select",
                             )
                         elif field.field_type == "multiselect" and field.options:
-                            yield OptionList(
-                                *[(str(l), str(v)) for v, l in field.options],
+                            yield SelectionList(
+                                *[(str(v), str(l)) for v, l in field.options],
                                 id=f"field-{field.name}",
                                 classes="form-select",
                             )
@@ -186,10 +186,10 @@ class BaseFormModal(ModalScreen):
                         widget.value = field.default
                     elif isinstance(widget, Select) and field.default:
                         widget.value = field.default
-                    elif isinstance(widget, OptionList) and isinstance(field.default, list):
-                        for idx, default_val in enumerate(field.default):
+                    elif isinstance(widget, SelectionList) and isinstance(field.default, list):
+                        for default_val in field.default:
                             try:
-                                widget.select(int(default_val))
+                                widget.select_option(str(default_val))
                             except (ValueError, IndexError):
                                 pass
                 except Exception:
@@ -225,10 +225,10 @@ class BaseFormModal(ModalScreen):
                 elif isinstance(widget, Select):
                     if widget.value is not None:
                         self.form_data[field.name] = str(widget.value)
-                elif isinstance(widget, OptionList):
-                    selected = widget.selected_indices
+                elif isinstance(widget, SelectionList):
+                    selected = widget.selected
                     if selected:
-                        self.form_data[field.name] = [str(idx) for idx in selected]
+                        self.form_data[field.name] = [str(item) for item in selected]
             except Exception:
                 pass
 
@@ -248,8 +248,8 @@ class BaseFormModal(ModalScreen):
                     elif isinstance(widget, Select):
                         if widget.value is None:
                             return False
-                    elif isinstance(widget, OptionList):
-                        if not widget.selected_indices:
+                    elif isinstance(widget, SelectionList):
+                        if not widget.selected:
                             return False
                 except Exception:
                     return False
