@@ -140,7 +140,6 @@ class MaintenanceLogScreen(Screen):
         # Load events
         events = self.maintenance_service.get_events_for_car(self.car_id)
         self.maintenance_table = self.query_one("#maintenance-table", MaintenanceTable)
-        self.maintenance_table.setup_table()
         self.maintenance_table.populate_events(events)
 
         self.detail_content = self.query_one("#detail-content", Static)
@@ -205,6 +204,7 @@ class MaintenanceLogScreen(Screen):
                     if form_data:
                         try:
                             event_id = form_data.pop("id")
+                            event = MaintenanceEvent(**form_data)
                             result = self.maintenance_service.update_event(event_id, **form_data)
                             if result:
                                 self.notify("Maintenance entry updated", timeout=2)
